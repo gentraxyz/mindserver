@@ -44,6 +44,18 @@ async function handleChatCompletion(request, env) {
     }
 
     // Forward request to OpenRouter
+    // Spread params first so specific parameters take precedence
+    const requestPayload = {
+      ...(body.params || {}),
+      model: body.model || 'openai/gpt-4o-mini',
+      messages: body.messages,
+    };
+    
+    // Add optional parameters if provided
+    if (body.stop !== undefined) requestPayload.stop = body.stop;
+    if (body.max_tokens !== undefined) requestPayload.max_tokens = body.max_tokens;
+    if (body.temperature !== undefined) requestPayload.temperature = body.temperature;
+
     const openRouterResponse = await fetch(OPENROUTER_API_URL, {
       method: 'POST',
       headers: {
@@ -52,14 +64,7 @@ async function handleChatCompletion(request, env) {
         'HTTP-Referer': 'https://mindcraft.ai',
         'X-Title': 'Mindcraft',
       },
-      body: JSON.stringify({
-        model: body.model || 'openai/gpt-4o-mini',
-        messages: body.messages,
-        stop: body.stop,
-        max_tokens: body.max_tokens,
-        temperature: body.temperature,
-        ...body.params,
-      }),
+      body: JSON.stringify(requestPayload),
     });
 
     const responseData = await openRouterResponse.json();

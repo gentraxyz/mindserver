@@ -79,7 +79,43 @@ export class WorkerModel {
             ]
         });
 
-        return this.sendRequest(imageMessages, systemMessage);
+        // For vision requests, the system message is included in the user message above
+        // so we pass an empty system message to avoid duplication
+        const requestBody = {
+            model: this.model_name,
+            messages: strictFormat(imageMessages),
+        };
+
+        let res = null;
+        try {
+            console.log('Awaiting worker vision API response...');
+            const response = await fetch(`${this.url}/v1/chat/completions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestBody),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                console.error('Worker API error:', data);
+                return 'My brain disconnected, try again.';
+            }
+
+            if (!data?.choices?.[0]) {
+                console.error('No completion or choices returned:', data);
+                return 'No response received.';
+            }
+
+            console.log('Received.');
+            res = data.choices[0].message.content;
+        } catch (err) {
+            console.error('Error while awaiting response:', err);
+            res = 'My brain disconnected, try again.';
+        }
+        return res;
     }
 
     async embed(text) {
