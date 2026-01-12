@@ -1,0 +1,5 @@
+{
+    "name": "andy-worker",
+
+    "model": "worker/openai/gpt-4o-mini"
+}

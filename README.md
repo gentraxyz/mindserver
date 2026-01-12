@@ -18,6 +18,28 @@
 > [!Caution]
 Do not connect this bot to public servers with coding enabled. This project allows an LLM to write/execute code on your computer. The code is sandboxed, but still vulnerable to injection attacks. Code writing is disabled by default, you can enable it by setting `allow_insecure_coding` to `true` in `settings.js`. Ye be warned.
 
+# Project Structure
+
+This project is organized as a monorepo with two main components:
+
+- **Root (Client)**: The Minecraft bot client that connects to Minecraft servers and manages AI agents
+- **`/worker`**: A Cloudflare Worker that handles LLM requests via OpenRouter
+
+## Quick Start Options
+
+### Option 1: Use the Worker (Recommended for easy setup)
+
+The worker-based setup requires no local API keys - just deploy the worker once with your OpenRouter API key, and all clients can use it.
+
+1. Deploy the worker (see [Worker Setup](#worker-setup))
+2. Set `worker_url` in `settings.js` to your deployed worker URL
+3. Use a worker-based profile: `"model": "worker/openai/gpt-4o-mini"`
+4. Run the client - no local API keys needed!
+
+### Option 2: Direct API Access (Traditional)
+
+Configure API keys locally for direct access to LLM providers. See [Install and Run](#install-and-run).
+
 # Getting Started
 ## Requirements
 
@@ -72,6 +94,7 @@ You can configure the agent's name, model, and prompts in their profile like `an
 | `huggingface` | `HUGGINGFACE_API_KEY` | [docs](https://huggingface.co/models) |
 | `novita` | `NOVITA_API_KEY` | [docs](https://novita.ai/model-api/product/llm-api?utm_source=github_mindcraft&utm_medium=github_readme&utm_campaign=link) |
 | `openrouter` | `OPENROUTER_API_KEY` | [docs](https://openrouter.ai/models) |
+| `worker` | n/a (uses deployed worker) | See [Worker Setup](#worker-setup) |
 | `glhf` | `GHLF_API_KEY` | [docs](https://glhf.chat/user-settings/api) |
 | `hyperbolic` | `HYPERBOLIC_API_KEY` | [docs](https://docs.hyperbolic.xyz/docs/getting-started) |
 | `vllm` | n/a | n/a |
@@ -87,6 +110,55 @@ To install our models, install ollama and run the following terminal command:
 ```bash
 ollama pull sweaterdog/andy-4:micro-q8_0 && ollama pull embeddinggemma
 ```
+
+## Worker Setup
+
+The worker provides a centralized LLM API proxy using OpenRouter. This is the **recommended setup** for easy deployment - configure once, use everywhere without needing API keys on each client.
+
+### Deploy the Worker
+
+1. Navigate to the worker directory:
+   ```bash
+   cd worker
+   npm install
+   ```
+
+2. Configure your OpenRouter API key:
+   ```bash
+   npx wrangler secret put OPENROUTER_API_KEY
+   ```
+
+3. Deploy to Cloudflare:
+   ```bash
+   npm run deploy
+   ```
+
+4. Note your worker URL (e.g., `https://mindcraft-worker.your-account.workers.dev`)
+
+### Configure the Client to Use the Worker
+
+1. Set the worker URL in `settings.js`:
+   ```javascript
+   "worker_url": "https://mindcraft-worker.your-account.workers.dev"
+   ```
+
+2. Use a worker-based profile in your agent configuration:
+   ```json
+   {
+     "name": "andy",
+     "model": "worker/openai/gpt-4o-mini"
+   }
+   ```
+
+3. The client will now route all LLM requests through your worker - no local API keys needed!
+
+### Supported Models via Worker
+
+When using the worker, you can use any model available on OpenRouter. Specify models as `worker/{provider}/{model}`:
+- `worker/openai/gpt-4o-mini`
+- `worker/anthropic/claude-3-sonnet`
+- `worker/google/gemini-2.5-pro`
+- See [OpenRouter models](https://openrouter.ai/models) for the full list
 
 ## Online Servers
 To connect to online servers your bot will need an official Microsoft/Minecraft account. You can use your own personal one, but will need another account if you want to connect too and play with it. To connect, change these lines in `settings.js`:
