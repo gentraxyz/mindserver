@@ -44,6 +44,9 @@ if (process.env.MINECRAFT_PORT) {
 if (process.env.MINDSERVER_PORT) {
     settings.mindserver_port = process.env.MINDSERVER_PORT;
 }
+if (process.env.WORKER_URL) {
+    settings.worker_url = process.env.WORKER_URL;
+}
 if (process.env.PROFILES && JSON.parse(process.env.PROFILES).length > 0) {
     settings.profiles = JSON.parse(process.env.PROFILES);
 }

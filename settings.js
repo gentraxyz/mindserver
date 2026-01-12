@@ -7,6 +7,10 @@ const settings = {
     // the mindserver manages all agents and hosts the UI
     "mindserver_port": 8080,
     "auto_open_ui": true, // opens UI in browser on startup
+
+    // Worker URL for LLM requests (when using worker-based models)
+    // Set this to your deployed Cloudflare Worker URL, or leave empty for local development
+    "worker_url": "", // e.g., "https://mindcraft-worker.your-account.workers.dev"
     
     "base_profile": "assistant", // survival, assistant, creative, or god_mode
     "profiles": [
