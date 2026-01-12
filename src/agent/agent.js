@@ -1,6 +1,17 @@
 import { History } from './history.js';
 import { Coder } from './coder.js';
-import { VisionInterpreter } from './vision/vision_interpreter.js';
+let VisionInterpreter, addBrowserViewer;
+try {
+    const visionMod = await import('./vision/vision_interpreter.js');
+    VisionInterpreter = visionMod.VisionInterpreter;
+    const viewerMod = await import('./vision/browser_viewer.js');
+    addBrowserViewer = viewerMod.addBrowserViewer;
+} catch (e) {
+    // Vision feature requires native dependencies (canvas, gl) - gracefully skip if not available
+    console.warn('Vision feature unavailable (requires native dependencies)');
+    VisionInterpreter = class { constructor() { } }; // No-op class since vision is disabled by default
+    addBrowserViewer = () => {};
+}
 import { Prompter } from '../models/prompter.js';
 import { initModes } from './modes.js';
 import { initBot } from '../utils/mcdata.js';
@@ -11,7 +22,6 @@ import { MemoryBank } from './memory_bank.js';
 import { SelfPrompter } from './self_prompter.js';
 import convoManager from './conversation.js';
 import { handleTranslation, handleEnglishTranslation } from '../utils/translator.js';
-import { addBrowserViewer } from './vision/browser_viewer.js';
 import { serverProxy, sendOutputToServer } from './mindserver_proxy.js';
 import settings from './settings.js';
 import { Task } from './tasks/tasks.js';

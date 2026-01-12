@@ -3,7 +3,7 @@ import { WorldView } from 'prismarine-viewer/viewer/lib/worldView.js';
 import { getBufferFromStream } from 'prismarine-viewer/viewer/lib/simpleUtils.js';
 
 import THREE from 'three';
-import { createCanvas } from 'node-canvas-webgl/lib/index.js';
+// import { createCanvas } from 'node-canvas-webgl/lib/index.js'; // Disabled - requires native build dependencies
 import fs from 'fs/promises';
 import { Vec3 } from 'vec3';
 import { EventEmitter } from 'events';

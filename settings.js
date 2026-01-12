@@ -10,7 +10,7 @@ const settings = {
 
     // Worker URL for LLM requests (when using worker-based models)
     // Set this to your deployed Cloudflare Worker URL, or leave empty for local development
-    "worker_url": "", // e.g., "https://mindcraft-worker.your-account.workers.dev"
+    "worker_url": "https://mindcraft-worker.webmaster-e1c.workers.dev", // e.g., "https://mindcraft-worker.your-account.workers.dev"
     
     "base_profile": "assistant", // survival, assistant, creative, or god_mode
     "profiles": [
@@ -51,7 +51,7 @@ const settings = {
     "relevant_docs_count": 5, // number of relevant code function docs to select for prompting. -1 for all
 
     "max_messages": 15, // max number of messages to keep in context
-    "num_examples": 2, // number of examples to give to the model
+    "num_examples": 0, // number of examples to give to the model (0 = disabled, no embeddings needed)
     "max_commands": -1, // max number of commands that can be used in consecutive responses. -1 for no limit
     "show_command_syntax": "full", // "full", "shortened", or "none"
     "narrate_behavior": true, // chat simple automatic actions ('Picking up item!')

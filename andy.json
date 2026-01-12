@@ -1,6 +1,6 @@
 {
     "name": "andy",
 
-    "model": "gpt-5-nano"
+    "model": "worker/mistralai/devstral-2512:free"
 
 }

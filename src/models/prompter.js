@@ -90,7 +90,9 @@ export class Prompter {
             this.embedding_model = createModel({api: chat_model_profile.api});
         }
 
-        this.skill_libary = new SkillLibrary(agent, this.embedding_model);
+        // Only use embedding model if examples are enabled
+        const embeddingModelForSkills = settings.num_examples > 0 ? this.embedding_model : null;
+        this.skill_libary = new SkillLibrary(agent, embeddingModelForSkills);
         mkdirSync(`./bots/${name}`, { recursive: true });
         writeFileSync(`./bots/${name}/last_profile.json`, JSON.stringify(this.profile, null, 4), (err) => {
             if (err) {
