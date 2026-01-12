@@ -13,9 +13,9 @@ RUN apt-get -y install python3-boto3
 RUN apt-get -y install python3-tqdm
 RUN apt-get -y install tmux
 
-RUN git clone https://github.com/mindcraft-bots/mindcraft.git /mindcraft
-WORKDIR /mindcraft
-COPY ./server_data.zip /mindcraft
+RUN git clone https://github.com/mindcraft-bots/mindcraft.git /mindserver
+WORKDIR /mindserver
+COPY ./server_data.zip /mindserver
 RUN unzip server_data.zip
 
 RUN npm install

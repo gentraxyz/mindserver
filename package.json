@@ -1,5 +1,5 @@
 {
-    "name": "mindcraft",
+    "name": "mindserver",
     "type": "module",
     "dependencies": {
         "@anthropic-ai/sdk": "^0.17.1",

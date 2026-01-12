@@ -1,10 +1,10 @@
-import mindcraft
+import mindserver
 import json
 import os
 
-# Initialize Mindcraft, starting the Node.js server
+# Initialize MindServer, starting the Node.js server
 # This will also connect to the MindServer via websockets
-mindcraft.init()
+mindserver.init()
 
 # Get the directory of the current script
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -16,12 +16,12 @@ try:
         profile_data = json.load(f)
     
     settings = {"profile": profile_data}
-    mindcraft.create_agent(settings)
+    mindserver.create_agent(settings)
 
     settings_copy = settings.copy()
     settings_copy['profile']['name'] = 'andy2'
-    mindcraft.create_agent(settings_copy)
+    mindserver.create_agent(settings_copy)
 except FileNotFoundError:
     print(f"Error: Could not find andy.json at {profile_path}")
 
-mindcraft.wait()
+mindserver.wait()

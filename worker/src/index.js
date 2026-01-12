@@ -1,5 +1,5 @@
 /**
- * Mindcraft Cloudflare Worker
+ * MindServer Cloudflare Worker
  * 
  * This worker acts as a proxy for LLM requests, routing them through OpenRouter.
  * The client sends chat completion requests to this worker, and the worker
@@ -169,7 +169,7 @@ async function handleEmbedding(request, env) {
 function handleHealth() {
   return new Response(JSON.stringify({ 
     status: 'ok',
-    service: 'mindcraft-worker'
+    service: 'mindserver-worker'
   }), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });

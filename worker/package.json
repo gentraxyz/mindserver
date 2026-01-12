@@ -1,8 +1,8 @@
 {
-  "name": "mindcraft-worker",
+  "name": "mindserver-worker",
   "version": "1.0.0",
   "type": "module",
-  "description": "Cloudflare Worker for Mindcraft LLM requests via OpenRouter",
+  "description": "Cloudflare Worker for MindServer LLM requests via OpenRouter",
   "main": "src/index.js",
   "scripts": {
     "dev": "wrangler dev",

@@ -89,7 +89,7 @@ You can view the crafting task in action [here](https://www.youtube.com/shorts/V
 
 You **DO NOT** need Linux to run this, you can run on Windows with the --no-launch-world flag and by installing git bash. 
 
-Please follow the installation docs in the README to install mindcraft. You can create a docker image using the Tasks.Dockerfile. 
+Please follow the installation docs in the README to install MindServer. You can create a docker image using the Tasks.Dockerfile. 
 
 If you don't own Minecraft, you can run a limited version solely for offline games using these instructions:
 
@@ -108,8 +108,8 @@ Download the relevant task files and server data files, you can find the link [h
 Then, set up your conda environment: 
 
 ```
-conda create --name mindcraft python=3.11
-conda activate mindcraft
+conda create --name mindserver python=3.11
+conda activate mindserver
 pip install -r requirements.txt
 ```
 

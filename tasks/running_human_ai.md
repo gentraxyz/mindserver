@@ -5,8 +5,8 @@
 Install the conda environment for running the experiments by executing this in your command line: 
 
 ```
-conda create --name mindcraft python=3.11
-conda activate mindcraft
+conda create --name mindserver python=3.11
+conda activate mindserver
 pip install -r requirements.txt
 ```
 

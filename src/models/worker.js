@@ -1,7 +1,7 @@
 /**
  * Worker Model Adapter
  * 
- * This model class sends LLM requests to the Mindcraft Cloudflare Worker
+ * This model class sends LLM requests to the MindServer Cloudflare Worker
  * instead of directly calling various LLM APIs. The worker handles
  * routing requests to OpenRouter.
  */
@@ -28,40 +28,63 @@ export class WorkerModel {
             stop: stop_seq
         };
 
-        let res = null;
-        try {
-            console.log('Awaiting worker API response...');
-            const response = await fetch(`${this.url}/v1/chat/completions`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(requestBody),
-            });
+        const maxRetries = 5;
+        let lastError = null;
 
-            const data = await response.json();
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            let res = null;
+            try {
+                console.log(`Awaiting worker API response... (attempt ${attempt}/${maxRetries})`);
+                const response = await fetch(`${this.url}/v1/chat/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody),
+                });
 
-            if (!response.ok) {
-                console.error('Worker API error:', data);
-                return 'My brain disconnected, try again.';
+                const data = await response.json();
+
+                if (!response.ok) {
+                    console.error('Worker API error:', data);
+                    lastError = 'API returned error status';
+                    continue;
+                }
+
+                if (!data?.choices?.[0]) {
+                    console.error('No completion or choices returned:', data);
+                    lastError = 'No completion returned';
+                    continue;
+                }
+
+                if (data.choices[0].finish_reason === 'length') {
+                    throw new Error('Context length exceeded');
+                }
+
+                res = data.choices[0].message.content;
+
+                // Check if response is empty or only whitespace
+                if (!res || res.trim() === '') {
+                    console.warn(`Received empty response on attempt ${attempt}, retrying...`);
+                    lastError = 'Empty response received';
+                    continue;
+                }
+
+                console.log('Received.');
+                return res;
+            } catch (err) {
+                console.error(`Error while awaiting response (attempt ${attempt}):`, err);
+                lastError = err.message;
+                if (attempt < maxRetries) {
+                    // Wait a bit before retrying (exponential backoff: 500ms, 1s, 2s, 4s, 8s)
+                    const delay = 500 * Math.pow(2, attempt - 1);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
             }
-
-            if (!data?.choices?.[0]) {
-                console.error('No completion or choices returned:', data);
-                return 'No response received.';
-            }
-
-            if (data.choices[0].finish_reason === 'length') {
-                throw new Error('Context length exceeded');
-            }
-
-            console.log('Received.');
-            res = data.choices[0].message.content;
-        } catch (err) {
-            console.error('Error while awaiting response:', err);
-            res = 'My brain disconnected, try again.';
         }
-        return res;
+
+        console.error(`Failed after ${maxRetries} retry attempts. Last error: ${lastError}`);
+        return 'My brain disconnected, try again.';
     }
 
     async sendVisionRequest(messages, systemMessage, imageBuffer) {
@@ -86,36 +109,59 @@ export class WorkerModel {
             messages: strictFormat(imageMessages),
         };
 
-        let res = null;
-        try {
-            console.log('Awaiting worker vision API response...');
-            const response = await fetch(`${this.url}/v1/chat/completions`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(requestBody),
-            });
+        const maxRetries = 5;
+        let lastError = null;
 
-            const data = await response.json();
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            let res = null;
+            try {
+                console.log(`Awaiting worker vision API response... (attempt ${attempt}/${maxRetries})`);
+                const response = await fetch(`${this.url}/v1/chat/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody),
+                });
 
-            if (!response.ok) {
-                console.error('Worker API error:', data);
-                return 'My brain disconnected, try again.';
+                const data = await response.json();
+
+                if (!response.ok) {
+                    console.error('Worker API error:', data);
+                    lastError = 'API returned error status';
+                    continue;
+                }
+
+                if (!data?.choices?.[0]) {
+                    console.error('No completion or choices returned:', data);
+                    lastError = 'No completion returned';
+                    continue;
+                }
+
+                res = data.choices[0].message.content;
+
+                // Check if response is empty or only whitespace
+                if (!res || res.trim() === '') {
+                    console.warn(`Received empty vision response on attempt ${attempt}, retrying...`);
+                    lastError = 'Empty response received';
+                    continue;
+                }
+
+                console.log('Received.');
+                return res;
+            } catch (err) {
+                console.error(`Error while awaiting vision response (attempt ${attempt}):`, err);
+                lastError = err.message;
+                if (attempt < maxRetries) {
+                    // Wait a bit before retrying (exponential backoff: 500ms, 1s, 2s, 4s, 8s)
+                    const delay = 500 * Math.pow(2, attempt - 1);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
             }
-
-            if (!data?.choices?.[0]) {
-                console.error('No completion or choices returned:', data);
-                return 'No response received.';
-            }
-
-            console.log('Received.');
-            res = data.choices[0].message.content;
-        } catch (err) {
-            console.error('Error while awaiting response:', err);
-            res = 'My brain disconnected, try again.';
         }
-        return res;
+
+        console.error(`Failed after ${maxRetries} retry attempts. Last error: ${lastError}`);
+        return 'My brain disconnected, try again.';
     }
 
     async embed(text) {

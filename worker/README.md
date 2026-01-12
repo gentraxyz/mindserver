@@ -1,6 +1,6 @@
-# Mindcraft Worker
+# MindServer Worker
 
-A Cloudflare Worker that proxies LLM requests to OpenRouter, providing a simple API for the Mindcraft client.
+A Cloudflare Worker that proxies LLM requests to OpenRouter, providing a simple API for the MindServer client.
 
 ## Setup
 

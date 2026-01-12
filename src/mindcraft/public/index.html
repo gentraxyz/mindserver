@@ -1,965 +1,721 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Mindcraft</title>
+    <title>MindServer Agent</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #1a1a1a;
             color: #e0e0e0;
-        }
-        #agents {
-            background: #2d2d2d;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        h1 {
-            color: #ffffff;
-        }
-        .agent {
-            margin: 10px 0;
-            padding: 10px;
-            background: #363636;
-            border-radius: 4px;
             display: flex;
             flex-direction: column;
-            align-items: stretch;
+            height: 100vh;
+            overflow: hidden;
         }
-        .restart-btn, .start-btn, .stop-btn {
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-left: 5px;
-        }
-        .restart-btn {
-            background: #4CAF50;
-        }
-        .start-btn {
-            background: #2196F3;
-        }
-        .stop-btn {
-            background: #f44336;
-        }
-        .restart-btn:hover { background: #45a049; }
-        .start-btn:hover { background: #1976D2; }
-        .stop-btn:hover { background: #d32f2f; }
-        .gear-btn {
-            background: #505050;
-            color: #fff;
-            border: none;
-            border-radius: 4px;
-            padding: 2px 6px;
-            cursor: pointer;
-            margin-left: 6px;
-            font-size: 0.9em;
-        }
-        .gear-btn:hover { background: #5a5a5a; }
-        .status-icon {
-            font-size: 12px;
-            margin-right: 8px;
-        }
-        .status-icon.online {
-            color: #4CAF50;
-        }
-        .status-icon.offline {
-            color: #f44336;
-        }
-        #settingsForm {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 8px;
-            margin-top: 10px;
-        }
-        .setting-wrapper {
+        .header {
+            background: #2d2d2d;
+            padding: 16px 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
             display: flex;
             align-items: center;
-            gap: 6px;
-            background: #3a3a3a;
-            padding: 6px 8px;
+            justify-content: space-between;
+        }
+        .header h1 {
+            color: #ffffff;
+            font-size: 1.8em;
+            font-weight: 600;
+        }
+        .status-badge {
+            padding: 6px 12px;
             border-radius: 4px;
-            width: 100%;
-            box-sizing: border-box;
-            min-width: 0;
-        }
-        .setting-wrapper label {
-            flex: 0 0 50%;
             font-size: 0.9em;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            font-weight: 500;
         }
-        .setting-wrapper input[type="text"],
-        .setting-wrapper input[type="number"] {
-            flex: 1 1 0;
-            background: #262626;
+        .status-badge.online { 
+            background: #4CAF50;
+            color: white;
+        }
+        .status-badge.offline { 
+            background: #f44336;
+            color: white;
+        }
+        .status-badge.connecting { 
+            background: #ff9800;
+            color: white;
+        }
+        .main-content {
+            flex: 1;
+            display: flex;
+            gap: 16px;
+            padding: 24px;
+            overflow: hidden;
+        }
+        .left-panel {
+            flex: 2;
+            background: #2d2d2d;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow: auto;
+        }
+        .right-panel {
+            flex: 1;
+            background: #2d2d2d;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow: auto;
+        }
+        .section-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #ffffff;
+        }
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: #3a3a3a;
+            padding: 12px;
+            border-radius: 6px;
+        }
+        .stat-label {
+            font-size: 0.85em;
+            color: #aaa;
+            margin-bottom: 4px;
+        }
+        .stat-value {
+            font-size: 1.1em;
+            font-weight: 500;
+            color: #4CAF50;
+        }
+        .viewer-container {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #1a1a1a;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .viewer-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .inventory-section {
+            margin-top: 20px;
+        }
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .inventory-item {
+            background: #3a3a3a;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        .control-panel {
+            background: #2d2d2d;
+            padding: 16px 24px;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.3);
+        }
+        .message-container {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .message-input {
+            flex: 1;
+            background: #3a3a3a;
             border: 1px solid #555;
             color: #e0e0e0;
             border-radius: 4px;
-            padding: 4px 6px;
-            max-width: 100%;
-            min-width: 0;
+            padding: 10px 12px;
+            font-size: 1em;
         }
-        .setting-wrapper input[type="checkbox"] {
-            transform: scale(1.2);
+        .message-input:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
-        .agent-view-container {
-            width: 100%;
-            height: 100%;
-            aspect-ratio: 4/3;
-            overflow: hidden;
-        }
-        .agent-viewer {
-            width: 100%;
-            height: 100%;
+        .btn {
+            padding: 10px 16px;
             border: none;
-            display: block;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 500;
+            transition: all 0.2s;
         }
-        .last-message {
-            font-style: italic;
-            color: #aaa;
-            margin-top: 5px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            width: 100%;
-        }
-        .start-btn:disabled {
+        .btn:disabled {
             opacity: 0.4;
             cursor: not-allowed;
         }
-        .agent-view-container {
-            margin-top: 6px;
-            display: flex;
-            justify-content: flex-start;
-        }
-        .agent-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 8px;
-            width: 100%;
-            align-items: start;
-        }
-        .agent-grid .cell {
-            background: #3a3a3a;
-            padding: 6px 8px;
-            border-radius: 4px;
-        }
-        .agent-grid .cell.title {
-            background: transparent;
-            padding: 0;
-        }
-        .agent-inventory {
-            margin-top: 8px;
-            background: #2f2f2f;
-            border-radius: 6px;
-            padding: 8px;
-        }
-        .agent-inventory h3 { margin: 0 0 6px 0; font-size: 1em; }
-        .inventory-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 6px;
-        }
-        .agent-details-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 6px;
-            width: 100%;
-        }
-        .controls-row {
-            margin-top: 8px;
-            display: grid;
-            grid-template-columns: auto minmax(100px, 1fr) repeat(5, auto);
-            gap: 8px;
-            align-items: center;
-        }
-        .msg-input {
-            width: calc(100% - 8px);
-            background: #262626;
-            border: 1px solid #555;
-            color: #e0e0e0;
-            border-radius: 4px;
-            padding: 4px 6px;
-        }
-        .neutral-btn {
+        .btn-primary {
+            background: #2196F3;
             color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-left: 5px;
+        }
+        .btn-primary:hover:not(:disabled) {
+            background: #1976D2;
+        }
+        .btn-success {
+            background: #4CAF50;
+            color: white;
+        }
+        .btn-success:hover:not(:disabled) {
+            background: #45a049;
+        }
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+        .btn-danger:hover:not(:disabled) {
+            background: #d32f2f;
+        }
+        .btn-secondary {
             background: #505050;
+            color: white;
         }
-        .neutral-btn:hover { background: #5a5a5a; }
-        .neutral-btn:disabled {
-            background: #383838;
-            color: #666;
-            cursor: not-allowed;
+        .btn-secondary:hover:not(:disabled) {
+            background: #5a5a5a;
         }
-        .msg-input:disabled {
-            background: #1a1a1a;
-            color: #666;
-            cursor: not-allowed;
+        .button-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
         }
-        .page-footer {
+        .last-message {
+            background: #3a3a3a;
+            padding: 12px;
+            border-radius: 6px;
+            font-style: italic;
+            color: #ccc;
+            margin-top: 12px;
+            min-height: 50px;
+        }
+        .no-agent {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+            font-size: 1.1em;
+        }
+        .action-text {
+            color: #aaa;
+            font-size: 0.95em;
+        }
+        .onboarding-overlay {
             position: fixed;
-            bottom: 0;
+            top: 0;
             left: 0;
             right: 0;
-            background: #2d2d2d;
-            padding: 16px;
-            display: flex;
-            gap: 12px;
-            justify-content: space-between;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
-        }
-        body {
-            padding-bottom: 80px;  /* Make room for footer */
-        }
-        .agent-stats-row {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 8px;
-            margin: 6px 0;
-            font-size: 0.9em;
-            color: #cccccc;
-            width: 100%;
-            box-sizing: border-box;
-        }
-        .agent-stats-row .stat {
-            background: #3a3a3a;
-            padding: 6px 8px;
-            border-radius: 4px;
-        }
-        .status-badge {
-            font-size: 0.75em;
-            margin-left: 8px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            background: #3a3a3a;
-            color: #cccccc;
-            text-transform: lowercase;
-        }
-        .status-badge.online { color: #4CAF50; }
-        .status-badge.offline { color: #f44336; }
-        .title-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .title-left {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .title-spacer { flex: 1; }
-        /* Modal styles */
-        .modal-backdrop {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5);
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
             display: none;
             align-items: center;
             justify-content: center;
             z-index: 1000;
         }
-        .modal {
+        .onboarding-card {
             background: #2d2d2d;
-            border-radius: 8px;
-            width: 80vw;
-            height: 80vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            border-radius: 12px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
         }
-        .modal-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 16px;
-            border-bottom: 1px solid #3a3a3a;
+        .onboarding-title {
+            font-size: 2em;
+            font-weight: 600;
+            color: #4CAF50;
+            margin-bottom: 12px;
+            text-align: center;
         }
-        .modal-close-btn {
-            background: #f44336;
-            color: #fff;
+        .onboarding-subtitle {
+            color: #aaa;
+            text-align: center;
+            margin-bottom: 32px;
+            font-size: 1.05em;
+        }
+        .form-group {
+            margin-bottom: 24px;
+        }
+        .form-label {
+            display: block;
+            color: #e0e0e0;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        .form-input {
+            width: 100%;
+            background: #3a3a3a;
+            border: 2px solid #555;
+            color: #e0e0e0;
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 1.1em;
+            transition: border-color 0.3s;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        .form-hint {
+            color: #888;
+            font-size: 0.9em;
+            margin-top: 6px;
+        }
+        .form-error {
+            color: #f44336;
+            font-size: 0.9em;
+            margin-top: 6px;
+            display: none;
+        }
+        .onboarding-btn {
+            width: 100%;
+            padding: 14px;
+            background: #4CAF50;
+            color: white;
             border: none;
-            border-radius: 4px;
-            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 1.1em;
+            font-weight: 600;
             cursor: pointer;
+            transition: background 0.3s;
         }
-        .modal-body {
-            flex: 1 1 auto;
-            overflow: auto;
-            padding: 12px 16px;
+        .onboarding-btn:hover:not(:disabled) {
+            background: #45a049;
         }
-        .modal-footer {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 16px;
-            border-top: 1px solid #3a3a3a;
+        .onboarding-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
-        .footer-left { color: #cccccc; font-style: italic; }
+        .loading-spinner {
+            border: 3px solid #3a3a3a;
+            border-top: 3px solid #4CAF50;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
-    <div class="title-row">
-        <div class="title-left">
-            <h1 style="margin: 0;">Mindcraft</h1>
-            <span id="msStatus" class="status-badge offline">mindserver offline</span>
-        </div>
-        <div class="title-spacer"></div>
-    </div>
-    <div id="agents"></div>
+    <!-- Onboarding Overlay -->
+    <div id="onboardingOverlay" class="onboarding-overlay">
+        <div class="onboarding-card">
+            <h1 class="onboarding-title">Welcome to MindServer</h1>
+            <p class="onboarding-subtitle">Let's create your first AI agent</p>
+            
+            <div class="form-group">
+                <label class="form-label" for="agentNameInput">Agent Name</label>
+                <input type="text" id="agentNameInput" class="form-input" placeholder="Enter a name for your agent..." autocomplete="off">
+                <div class="form-hint">Choose a unique name for your Minecraft bot</div>
+                <div class="form-error" id="nameError"></div>
+            </div>
 
-    <div class="page-footer">
-        <div>
-            <button id="openCreateAgentBtn" class="start-btn">New Agent</button>
-        </div>
-        <div style="display:flex; gap:12px;">
-            <button class="stop-btn" onclick="disconnectAllAgents()">Disconnect All Agents</button>
-            <button class="stop-btn" onclick="confirmShutdown()">Full Shutdown</button>
+            <button id="createAgentBtn" class="onboarding-btn">Create Agent</button>
         </div>
     </div>
 
-    <!-- Modal -->
-    <div id="createAgentModal" class="modal-backdrop">
-        <div class="modal">
-            <div class="modal-header">
-                <h2 style="margin:0;">Create Agent</h2>
-                <button id="closeCreateAgentBtn" class="modal-close-btn">Close</button>
-            </div>
-            <div class="modal-body">
-                <div id="createAgentSection">
-                    <div id="profileStatus" style="margin:6px 0;">Profile: Not uploaded</div>
-                    <div id="settingsForm"></div>
-                    <div id="createError" style="color:#f44336;margin-top:10px;"></div>
-                    <input type="file" id="profileFileInput" accept=".json,application/json" style="display:none">
+    <div class="header">
+        <h1>MindServer Agent</h1>
+        <span id="statusBadge" class="status-badge offline">Disconnected</span>
+    </div>
+
+    <div class="main-content">
+        <div class="left-panel">
+            <div id="viewerSection" style="display: none;">
+                <h2 class="section-title">Agent View</h2>
+                <div class="viewer-container">
+                    <iframe id="agentViewer"></iframe>
                 </div>
             </div>
-            <div class="modal-footer">
-                <div class="footer-left" id="footerStatus">Configure settings, then upload a profile and create the agent.</div>
-                <div class="footer-actions">
-                    <button id="uploadProfileBtn" class="start-btn">Upload Profile</button>
-                    <button id="submitCreateAgentBtn" class="start-btn" disabled>Create Agent</button>
+
+            <h2 class="section-title">Status</h2>
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Health</div>
+                    <div class="stat-value" id="health">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Hunger</div>
+                    <div class="stat-value" id="hunger">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Position</div>
+                    <div class="stat-value" id="position">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Biome</div>
+                    <div class="stat-value" id="biome">-</div>
                 </div>
             </div>
+
+            <h2 class="section-title">Current Action</h2>
+            <div class="stat-card">
+                <div class="action-text" id="currentAction">Idle</div>
+            </div>
+
+            <div class="inventory-section">
+                <h2 class="section-title">Inventory</h2>
+                <div class="stat-card" style="margin-bottom: 12px;">
+                    <div class="stat-label">Equipped Item</div>
+                    <div class="stat-value" id="equipped">-</div>
+                </div>
+                <div id="inventoryGrid" class="inventory-grid"></div>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <h2 class="section-title">Agent Info</h2>
+            <div class="stat-card" style="margin-bottom: 12px;">
+                <div class="stat-label">Agent Name</div>
+                <div class="stat-value" id="agentName">-</div>
+            </div>
+            <div class="stat-card" style="margin-bottom: 12px;">
+                <div class="stat-label">Gamemode</div>
+                <div class="stat-value" id="gamemode">-</div>
+            </div>
+
+            <h2 class="section-title" style="margin-top: 20px;">Last Message</h2>
+            <div class="last-message" id="lastMessage">No messages yet</div>
         </div>
     </div>
 
-    <!-- Agent Settings Modal -->
-    <div id="agentSettingsModal" class="modal-backdrop">
-        <div class="modal">
-            <div class="modal-header">
-                <h2 id="agentSettingsTitle" style="margin:0;">Agent Settings</h2>
-                <button id="closeAgentSettingsBtn" class="modal-close-btn">Close</button>
-            </div>
-            <div class="modal-body">
-                <div id="agentSettingsSection">
-                    <div id="agentSettingsForm"></div>
-                    <div id="agentSettingsError" style="color:#f44336;margin-top:10px;"></div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <div class="footer-left" id="agentSettingsFooter">Modify settings then apply to restart the agent.</div>
-                <div class="footer-actions">
-                    <button id="discardAgentSettingsBtn" class="stop-btn" style="background:#777;">Discard Changes</button>
-                    <button id="applyAgentSettingsBtn" class="start-btn" disabled>Apply & Restart</button>
-                </div>
-            </div>
+    <div class="control-panel">
+        <div class="message-container">
+            <input type="text" id="messageInput" class="message-input" placeholder="Enter message..." disabled>
+            <button id="sendBtn" class="btn btn-primary" disabled>Send</button>
+        </div>
+        <div class="button-group">
+            <button id="stopActionBtn" class="btn btn-secondary" disabled>Stop Action</button>
+            <button id="stayStillBtn" class="btn btn-secondary" disabled>Stay Still</button>
+            <button id="restartBtn" class="btn btn-success" disabled>Restart Agent</button>
+            <button id="connectBtn" class="btn btn-primary" disabled>Connect</button>
+            <button id="disconnectBtn" class="btn btn-danger" disabled>Disconnect</button>
         </div>
     </div>
 
     <script>
-        const socket = io({ path: window.location.pathname + 'socket.io' })
-        const agentsDiv = document.getElementById('agents');
-        let settingsSpec = {};
-        let profileData = null;
-        const agentSettings = {};
-        const agentLastMessage = {};
-        const inventoryOpen = {};
-        let currentAgents = [];
+        const socket = io();
+        
+        let agentName = null;
+        let agentInGame = false;
+        let agentSettings = null;
+        let viewerPort = null;
+        let hasCheckedForAgent = false;
 
-        const statusEl = document.getElementById('msStatus');
-        function updateStatus(connected) {
-            if (!statusEl) return;
-            if (connected) {
-                statusEl.textContent = 'MindServer online';
-                statusEl.classList.remove('offline');
-                statusEl.classList.add('online');
+        // Onboarding functionality
+        const onboardingOverlay = document.getElementById('onboardingOverlay');
+        const agentNameInput = document.getElementById('agentNameInput');
+        const createAgentBtn = document.getElementById('createAgentBtn');
+        const nameError = document.getElementById('nameError');
+
+        function showOnboarding() {
+            onboardingOverlay.style.display = 'flex';
+            setTimeout(() => agentNameInput.focus(), 100);
+        }
+
+        function hideOnboarding() {
+            onboardingOverlay.style.display = 'none';
+        }
+
+        function validateAgentName(name) {
+            if (!name || name.trim().length === 0) {
+                return 'Agent name cannot be empty';
+            }
+            if (name.length < 3) {
+                return 'Agent name must be at least 3 characters';
+            }
+            if (name.length > 16) {
+                return 'Agent name must be 16 characters or less';
+            }
+            if (!/^[a-zA-Z0-9_]+$/.test(name)) {
+                return 'Agent name can only contain letters, numbers, and underscores';
+            }
+            return null;
+        }
+
+        agentNameInput.addEventListener('input', () => {
+            const error = validateAgentName(agentNameInput.value);
+            if (error) {
+                nameError.textContent = error;
+                nameError.style.display = 'block';
+                createAgentBtn.disabled = true;
             } else {
-                statusEl.textContent = 'MindServer offline';
-                statusEl.classList.remove('online');
-                statusEl.classList.add('offline');
-            }
-        }
-        function subscribeToState() {
-            socket.emit('listen-to-agents');
-        }
-        // Initial status
-        updateStatus(false);
-        socket.on('connect', () => {
-            updateStatus(true);
-            subscribeToState();
-            // Clear all cached settings on reconnect
-            Object.keys(agentSettings).forEach(name => delete agentSettings[name]);
-        });
-        socket.on('disconnect', () => {
-            updateStatus(false);
-        });
-        socket.on('connect_error', () => {
-            updateStatus(false);
-        });
-
-        fetch('/settings_spec.json')
-            .then(r => r.json())
-            .then(spec => {
-                settingsSpec = spec;
-                buildSettingsForm();
-            });
-
-        function buildSettingsForm() {
-            const form = document.getElementById('settingsForm');
-            form.innerHTML = '';
-            // ensure grid for multi-column layout
-            form.style.display = 'grid';
-            form.style.gridTemplateColumns = 'repeat(auto-fit, minmax(320px, 1fr))';
-            form.style.gap = '8px';
-            Object.keys(settingsSpec).forEach(key => {
-                if (key === 'profile') return; // profile handled via upload
-                const cfg = settingsSpec[key];
-                const wrapper = document.createElement('div');
-                wrapper.className = 'setting-wrapper';
-                const label = document.createElement('label');
-                label.textContent = key;
-                label.title = cfg.description || '';
-                let input;
-                switch (cfg.type) {
-                    case 'boolean':
-                        input = document.createElement('input');
-                        input.type = 'checkbox';
-                        input.checked = cfg.default === true;
-                        break;
-                    case 'number':
-                        input = document.createElement('input');
-                        input.type = 'number';
-                        input.value = cfg.default;
-                        break;
-                    default:
-                        input = document.createElement('input');
-                        input.type = 'text';
-                        input.value = typeof cfg.default === 'object' ? JSON.stringify(cfg.default) : cfg.default;
-                }
-                input.title = cfg.description || '';
-                input.id = `setting-${key}`;
-                wrapper.appendChild(label);
-                wrapper.appendChild(input);
-                form.appendChild(wrapper);
-            });
-        }
-
-        document.getElementById('uploadProfileBtn').addEventListener('click', () => {
-            document.getElementById('profileFileInput').click();
-        });
-
-        document.getElementById('profileFileInput').addEventListener('change', e => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = ev => {
-                try {
-                    profileData = JSON.parse(ev.target.result);
-                    document.getElementById('submitCreateAgentBtn').disabled = false;
-                    document.getElementById('profileStatus').textContent = `Profile: ${profileData.name || 'Uploaded'}`;
-                    document.getElementById('createError').textContent = '';
-                } catch (err) {
-                    document.getElementById('createError').textContent = 'Invalid profile JSON: ' + err.message;
-                    profileData = null;
-                    document.getElementById('submitCreateAgentBtn').disabled = true;
-                    document.getElementById('profileStatus').textContent = 'Profile: Not uploaded';
-                }
-            };
-            reader.readAsText(file);
-            e.target.value = '';
-        });
-
-        document.getElementById('submitCreateAgentBtn').addEventListener('click', () => {
-            if (!profileData) return;
-            const settings = { profile: profileData };
-            Object.keys(settingsSpec).forEach(key => {
-                if (key === 'profile') return;
-                const input = document.getElementById(`setting-${key}`);
-                if (!input) return;
-                const type = settingsSpec[key].type;
-                let val;
-                if (type === 'boolean') val = input.checked;
-                else if (type === 'number') val = Number(input.value);
-                else if (type === 'array' || type === 'object') {
-                    try { val = JSON.parse(input.value); }
-                    catch { val = input.value; }
-                } else val = input.value;
-                settings[key] = val;
-            });
-            socket.emit('create-agent', settings, res => {
-                if (!res.success) {
-                    document.getElementById('createError').textContent = res.error || 'Unknown error';
-                } else {
-                    // reset on success
-                    profileData = null;
-                    document.getElementById('submitCreateAgentBtn').disabled = true;
-                    document.getElementById('profileStatus').textContent = 'Profile: Not uploaded';
-                    document.getElementById('createError').textContent = '';
-                    hideCreateAgentModal();
-                }
-            });
-        });
-
-        // Modal open/close logic
-        const modalBackdrop = document.getElementById('createAgentModal');
-        document.getElementById('openCreateAgentBtn').addEventListener('click', () => {
-            buildSettingsForm();
-            modalBackdrop.style.display = 'flex';
-        });
-        function hideCreateAgentModal() {
-            modalBackdrop.style.display = 'none';
-        }
-        document.getElementById('closeCreateAgentBtn').addEventListener('click', hideCreateAgentModal);
-
-        socket.on('bot-output', (agentName, message) => {
-            agentLastMessage[agentName] = message;
-            const messageDiv = document.getElementById(`lastMessage-${agentName}`);
-            if (messageDiv) {
-                messageDiv.textContent = message;
+                nameError.style.display = 'none';
+                createAgentBtn.disabled = false;
             }
         });
 
-        // Subscribe to aggregated state updates (re-sent on each connect)
-        socket.on('state-update', (states) => {
-            window.lastStates = states;
-            Object.keys(states || {}).forEach(name => {
-                const st = states[name];
-                const healthEl = document.getElementById(`health-${name}`);
-                if (st && !st.error) {
-                    const gp = st.gameplay || {};
-                    if (healthEl && typeof gp.health === 'number') {
-                        const hMax = typeof gp.healthMax === 'number' ? gp.healthMax : 20;
-                        healthEl.textContent = `health: ${gp.health}/${hMax}`;
-                    }
-                    const posEl = document.getElementById(`pos-${name}`);
-                    const hunEl = document.getElementById(`hunger-${name}`);
-                    const bioEl = document.getElementById(`biome-${name}`);
-                    const modeEl = document.getElementById(`mode-${name}`);
-                    const itemsEl = document.getElementById(`items-${name}`);
-                    const equippedEl = document.getElementById(`equipped-${name}`);
-                    const invGrid = document.getElementById(`inventory-${name}`);
-                    const actionEl = document.getElementById(`action-${name}`);
-                    if (posEl && gp.position) {
-                        const p = gp.position;
-                        posEl.textContent = `x ${p.x}, y ${p.y}, z ${p.z}`;
-                    }
-                    if (hunEl && typeof gp.hunger === 'number') {
-                        const fMax = typeof gp.hungerMax === 'number' ? gp.hungerMax : 20;
-                        hunEl.textContent = `hunger: ${gp.hunger}/${fMax}`;
-                    }
-                    if (bioEl && gp.biome) bioEl.textContent = `biome: ${gp.biome}`;
-                    if (modeEl && gp.gamemode) modeEl.textContent = `gamemode: ${gp.gamemode}`;
-                    if (itemsEl && st.inventory) {
-                        const used = st.inventory.stacksUsed ?? 0;
-                        const total = st.inventory.totalSlots ?? 0;
-                        itemsEl.textContent = `inventory slots: ${used}/${total}`;
-                    }
-                    if (equippedEl && st.inventory?.equipment) {
-                        const e = st.inventory.equipment;
-                        equippedEl.textContent = `equipped: ${e.mainHand || 'none'}`;
-                    }
-                    const armorEl = document.getElementById(`armor-${name}`);
-                    if (armorEl && st.inventory?.equipment) {
-                        const e = st.inventory.equipment;
-                        const armor = [];
-                        if (e.helmet) armor.push(`head: ${e.helmet}`);
-                        if (e.chestplate) armor.push(`chest: ${e.chestplate}`);
-                        if (e.leggings) armor.push(`legs: ${e.leggings}`);
-                        if (e.boots) armor.push(`feet: ${e.boots}`);
-                        armorEl.textContent = `armor: ${armor.length ? armor.join(', ') : 'none'}`;
-                    }
-                    if (actionEl && st.action) {
-                        actionEl.textContent = `${st.action.current || 'Idle'}`;
-                    }
-                    if (invGrid && st.inventory?.counts) {
-                        const counts = st.inventory.counts;
-                        invGrid.innerHTML = Object.keys(counts).length ?
-                            Object.entries(counts).map(([k, v]) => `<div class="cell">${k}: ${v}</div>`).join('') :
-                            '<div class="cell">(empty)</div>';
-                    }
-                }
-            });
+        agentNameInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !createAgentBtn.disabled) {
+                createAgentBtn.click();
+            }
         });
 
-        function fetchAgentSettings(name) {
-            return new Promise((resolve) => {
-                if (agentSettings[name]) { resolve(agentSettings[name]); return; }
-                socket.emit('get-settings', name, res => {
-                    if (res.settings) {
-                        agentSettings[name] = res.settings;
-                        resolve(res.settings);
-                    } else resolve(null);
+        createAgentBtn.addEventListener('click', async () => {
+            const name = agentNameInput.value.trim();
+            const error = validateAgentName(name);
+            
+            if (error) {
+                nameError.textContent = error;
+                nameError.style.display = 'block';
+                return;
+            }
+
+            createAgentBtn.disabled = true;
+            createAgentBtn.innerHTML = '<span class="loading-spinner"></span>Creating agent...';
+
+            // Fetch settings spec first
+            try {
+                const specResponse = await fetch('/settings_spec.json');
+                const settingsSpec = await specResponse.json();
+
+                // Build settings with defaults
+                const settings = { profile: { name: name } };
+                Object.keys(settingsSpec).forEach(key => {
+                    if (key !== 'profile') {
+                        settings[key] = settingsSpec[key].default;
+                    }
                 });
-            });
-        }
 
-        // Agent settings modal logic
-        const agentSettingsModal = document.getElementById('agentSettingsModal');
-        const agentSettingsForm = document.getElementById('agentSettingsForm');
-        const applyBtn = document.getElementById('applyAgentSettingsBtn');
-        const discardBtn = document.getElementById('discardAgentSettingsBtn');
-        const closeAgentSettingsBtn = document.getElementById('closeAgentSettingsBtn');
-        const agentSettingsTitle = document.getElementById('agentSettingsTitle');
-        let currentAgentName = null;
-        let originalAgentSettings = null;
-
-        function buildAgentSettingsForm(settings) {
-            agentSettingsForm.innerHTML = '';
-            agentSettingsForm.style.display = 'grid';
-            agentSettingsForm.style.gridTemplateColumns = 'repeat(auto-fit, minmax(320px, 1fr))';
-            agentSettingsForm.style.gap = '8px';
-            Object.keys(settingsSpec).forEach(key => {
-                if (key === 'profile') return; // profile not edited here
-                const cfg = settingsSpec[key];
-                const wrapper = document.createElement('div');
-                wrapper.className = 'setting-wrapper';
-                const label = document.createElement('label');
-                label.textContent = key;
-                label.title = cfg.description || '';
-                let input;
-                switch (cfg.type) {
-                    case 'boolean':
-                        input = document.createElement('input');
-                        input.type = 'checkbox';
-                        input.checked = Boolean(settings[key]);
-                        break;
-                    case 'number':
-                        input = document.createElement('input');
-                        input.type = 'number';
-                        input.value = settings[key] ?? cfg.default ?? 0;
-                        break;
-                    default:
-                        input = document.createElement('input');
-                        input.type = 'text';
-                        const defVal = settings[key] ?? cfg.default ?? '';
-                        input.value = typeof defVal === 'object' ? JSON.stringify(defVal) : defVal;
-                }
-                input.id = `agent-setting-${key}`;
-                input.addEventListener('input', onAgentSettingsChanged);
-                if (input.type === 'checkbox') input.addEventListener('change', onAgentSettingsChanged);
-                wrapper.appendChild(label);
-                wrapper.appendChild(input);
-                agentSettingsForm.appendChild(wrapper);
-            });
-            onAgentSettingsChanged();
-        }
-
-        function openAgentSettings(name) {
-            currentAgentName = name;
-            agentSettingsTitle.textContent = `${name} Settings`;
-            fetchAgentSettings(name).then(settings => {
-                originalAgentSettings = JSON.parse(JSON.stringify(settings || {}));
-                buildAgentSettingsForm(settings || {});
-                agentSettingsModal.style.display = 'flex';
-            });
-        }
-        window.openAgentSettings = openAgentSettings;
-
-        function getEditedAgentSettings() {
-            const newSettings = { profile: (originalAgentSettings && originalAgentSettings.profile) || {} };
-            Object.keys(settingsSpec).forEach(key => {
-                if (key === 'profile') return;
-                const cfg = settingsSpec[key];
-                const input = document.getElementById(`agent-setting-${key}`);
-                if (!input) return;
-                let val;
-                if (cfg.type === 'boolean') val = input.checked;
-                else if (cfg.type === 'number') val = Number(input.value);
-                else if (cfg.type === 'array' || cfg.type === 'object') {
-                    try { val = JSON.parse(input.value); }
-                    catch { val = input.value; }
-                } else val = input.value;
-                newSettings[key] = val;
-            });
-            return newSettings;
-        }
-
-        function shallowEqual(a, b) {
-            if (!a || !b) return false;
-            const keys = Object.keys(settingsSpec).filter(k => k !== 'profile');
-            for (const k of keys) {
-                const va = a[k];
-                const vb = b[k];
-                if (typeof va === 'object' || typeof vb === 'object') {
-                    if (JSON.stringify(va) !== JSON.stringify(vb)) return false;
-                } else if (va !== vb) return false;
-            }
-            return true;
-        }
-
-        function onAgentSettingsChanged() {
-            if (!originalAgentSettings) { applyBtn.disabled = true; return; }
-            const edited = getEditedAgentSettings();
-            applyBtn.disabled = shallowEqual(edited, originalAgentSettings);
-        }
-
-        function closeAgentSettings() {
-            agentSettingsModal.style.display = 'none';
-            currentAgentName = null;
-            originalAgentSettings = null;
-        }
-
-        function updateAgentViewer(name) {
-            const agentEl = document.getElementById(`agent-${name}`);
-            if (!agentEl) return;
-
-            const settings = agentSettings[name];
-            const viewerContainer = agentEl.querySelector('.agent-view-container');
-            if (!viewerContainer) return;
-
-            const agentState = currentAgents.find(a => a.name === name);
-            const shouldShow = agentState?.in_game && settings?.render_bot_view === true;
-            viewerContainer.parentElement.style.display = shouldShow ? '' : 'none';
-        }
-
-        discardBtn.addEventListener('click', () => {
-            if (!currentAgentName || !originalAgentSettings) return;
-            buildAgentSettingsForm(originalAgentSettings);
-        });
-
-        applyBtn.addEventListener('click', () => {
-            if (!currentAgentName) return;
-            const edited = getEditedAgentSettings();
-            socket.emit('set-agent-settings', currentAgentName, edited);
-            // Update local settings immediately
-            agentSettings[currentAgentName] = { ...edited, fetched: true };
-            updateAgentViewer(currentAgentName);
-            closeAgentSettings();
-        });
-
-        closeAgentSettingsBtn.addEventListener('click', closeAgentSettings);
-
-
-        function renderAgentCard(agent) {
-            const cfg = agentSettings[agent.name] || {};
-            const showViewer = agent.in_game && cfg.render_bot_view === true;
-            const viewerPort = agent.viewerPort;
-            const viewerHTML = showViewer ? `<div class="agent-view-container"><iframe class="agent-viewer" id="viewer-${agent.name}" src="http://localhost:${viewerPort}"></iframe></div>` : '';
-            const lastMessage = agentLastMessage[agent.name] || '';
-            const invOpen = inventoryOpen[agent.name] === true;
-            const invStyle = invOpen ? '' : 'display:none;';
-            return `
-                    <div class="agent" id="agent-${agent.name}">
-                        <div class="agent-grid">
-                            <div class="cell title" style="grid-column: 1 / -1; display:flex; align-items:center; justify-content:space-between;">
-                                <span><span class="status-icon ${agent.in_game ? 'online' : 'offline'}">●</span>${agent.name}${agent.socket_connected && !agent.in_game ? '<span style="margin-left:6px;color:#f0ad4e;">joining...</span>' : ''}
-                                    <button class="gear-btn" title="Settings" onclick="openAgentSettings('${agent.name}')">⚙</button>
-                                    <button class="gear-btn" title="Inventory" onclick="toggleDetails('${agent.name}')">Inventory</button>
-                                </span>
-                            </div>
-                            ${showViewer ? `<div class="cell" style="grid-row: span 3; padding:0;">${viewerHTML}</div>` : ''}
-                            <div class="cell" id="action-${agent.name}">action: -</div>
-                            <div class="cell" id="mode-${agent.name}">gamemode: -</div>
-                            <div class="cell" id="health-${agent.name}">health: -</div>
-                            <div class="cell" id="hunger-${agent.name}">hunger: -</div>
-                            <div class="cell" id="pos-${agent.name}">pos: -</div>
-                            <div class="cell" id="biome-${agent.name}">biome: -</div>
-                            <div class="cell" id="items-${agent.name}">inventory slots: -</div>
-                            <div class="cell" id="equipped-${agent.name}">equipped: -</div>
-                            <div class="agent-inventory" id="inventorySection-${agent.name}" style="${invStyle} grid-column: 1 / -1;">
-                                <h3>Inventory</h3>
-                                <div class="cell" id="armor-${agent.name}" style="margin-bottom: 8px;">armor: -</div>
-                                <div class="inventory-grid" id="inventory-${agent.name}"></div>
-                            </div>
-                            <div id="lastMessage-${agent.name}" class="last-message" style="grid-column: 1 / -1;"><strong>Last Message:</strong> ${lastMessage}</div>
-                        </div>
-                        <div class="controls-row">
-                            <button class="start-btn" id="sendBtn-${agent.name}" disabled onclick="sendMessage('${agent.name}', document.getElementById('messageInput-${agent.name}').value)">Send</button>
-                            <input class="msg-input" type="text" id="messageInput-${agent.name}" placeholder="Enter message..." 
-                                oninput="onMsgInputChange('${agent.name}')"
-                                onkeydown="if(event.key === 'Enter') document.getElementById('sendBtn-${agent.name}').click()"
-                                ${!agent.in_game ? 'disabled' : ''}>
-                            <button class="neutral-btn" onclick="sendMessage('${agent.name}', '!stop')" ${!agent.in_game ? 'disabled' : ''}>Stop Action</button>
-                            <button class="neutral-btn" onclick="sendMessage('${agent.name}', '!stay(-1)')" ${!agent.in_game ? 'disabled' : ''}>Stay Still</button>
-                            <button class="neutral-btn" onclick="restartAgent('${agent.name}')" ${!agent.in_game ? 'disabled' : ''}>Restart</button>
-                            <button class="neutral-btn" ${agent.in_game ? `onclick=\"disconnectAgent('${agent.name}')\"` : (agent.socket_connected ? 'disabled' : `onclick=\"startAgent('${agent.name}')\"`)}>${agent.in_game ? 'Disconnect' : (agent.socket_connected ? 'Connecting...' : 'Connect')}</button>
-                            <button class="stop-btn" onclick="destroyAgent('${agent.name}')">Remove</button>
-                        </div>
-                    </div>`;
-        }
-
-        async function renderAgents(agents) {
-            if (!agents.length) {
-                agentsDiv.innerHTML = '<div class="agent">No agents connected</div>';
-                return;
-            }
-
-            // If agentsDiv is empty, do a full render
-            if (!agentsDiv.children.length) {
-                agentsDiv.innerHTML = agents.map(agent => renderAgentCard(agent)).join('');
-                // Update all viewers after initial render
-                setTimeout(() => {
-                    agents.forEach(a => {
-                        if (a.in_game) updateAgentViewer(a.name);
-                    });
-                }, 0);
-                return;
-            }
-
-            // Compare with current agents to find changes
-            const prevAgents = currentAgents.reduce((acc, a) => ({ ...acc, [a.name]: a }), {});
-            const changedAgents = agents.filter(a => {
-                const prev = prevAgents[a.name];
-                return !prev || prev.in_game !== a.in_game || prev.viewerPort !== a.viewerPort || prev.socket_connected !== a.socket_connected;
-            });
-
-            // Update only changed agents
-            changedAgents.forEach(agent => {
-                const el = document.getElementById(`agent-${agent.name}`);
-                if (el) {
-                    // Update existing card
-                    el.outerHTML = renderAgentCard(agent);
-                    if (agent.in_game) updateAgentViewer(agent.name);
-                } else {
-                    // Add new card
-                    agentsDiv.insertAdjacentHTML('beforeend', renderAgentCard(agent));
-                    if (agent.in_game) updateAgentViewer(agent.name);
-                }
-            });
-
-            // Remove cards for agents that no longer exist
-            Array.from(agentsDiv.children).forEach(el => {
-                const name = el.id.replace('agent-', '');
-                if (!agents.find(a => a.name === name)) {
-                    el.remove();
-                    delete inventoryOpen[name];
-                }
-            });
-        }
-
-        socket.on('agents-status', async (agents) => {
-            // Fetch settings for all agents that don't have current settings
-            const needSettings = agents.filter(a => !agentSettings[a.name]);
-            if (needSettings.length > 0) {
-                await Promise.all(needSettings.map(async (a) => {
-                    const settings = await fetchAgentSettings(a.name);
-                    if (settings) {
-                        agentSettings[a.name] = settings;
+                // Create agent
+                socket.emit('create-agent', settings, (response) => {
+                    if (response.success) {
+                        hideOnboarding();
+                        agentNameInput.value = '';
+                        createAgentBtn.innerHTML = 'Create Agent';
+                    } else {
+                        nameError.textContent = response.error || 'Failed to create agent';
+                        nameError.style.display = 'block';
+                        createAgentBtn.disabled = false;
+                        createAgentBtn.innerHTML = 'Create Agent';
                     }
-                }));
+                });
+            } catch (err) {
+                nameError.textContent = 'Error loading settings: ' + err.message;
+                nameError.style.display = 'block';
+                createAgentBtn.disabled = false;
+                createAgentBtn.innerHTML = 'Create Agent';
             }
-
-            // Compare with current agents to find changes
-            const prevAgents = currentAgents.reduce((acc, a) => ({ ...acc, [a.name]: a }), {});
-            const changedAgents = agents.filter(a => {
-                const prev = prevAgents[a.name];
-                return !prev || prev.in_game !== a.in_game || prev.viewerPort !== a.viewerPort || prev.socket_connected !== a.socket_connected;
-            });
-
-            // Update current agents list
-            currentAgents = agents;
-
-            // If agentsDiv is empty, do a full render
-            if (!agentsDiv.children.length) {
-                agentsDiv.innerHTML = agents.map(agent => renderAgentCard(agent)).join('');
-                // Update all viewers after initial render
-                setTimeout(() => {
-                    agents.forEach(a => {
-                        if (a.in_game) updateAgentViewer(a.name);
-                    });
-                }, 0);
-                return;
-            }
-
-            // Update only changed agents
-            changedAgents.forEach(agent => {
-                const el = document.getElementById(`agent-${agent.name}`);
-                if (el) {
-                    // Update existing card
-                    el.outerHTML = renderAgentCard(agent);
-                    if (agent.in_game) updateAgentViewer(agent.name);
-                } else {
-                    // Add new card
-                    agentsDiv.insertAdjacentHTML('beforeend', renderAgentCard(agent));
-                    if (agent.in_game) updateAgentViewer(agent.name);
-                }
-            });
-
-            // Remove cards for agents that no longer exist
-            Array.from(agentsDiv.children).forEach(el => {
-                const name = el.id.replace('agent-', '');
-                if (!agents.find(a => a.name === name)) {
-                    el.remove();
-                    delete inventoryOpen[name];
-                }
-            });
         });
 
-        function restartAgent(n) { socket.emit('restart-agent', n); }
-        function disconnectAgent(n) { socket.emit('stop-agent', n); }
-        function startAgent(n) { 
-            const btn = document.querySelector(`button[onclick="startAgent('${n}')"]`);
-            if (btn) {
-                btn.textContent = 'Connecting...';
-                btn.disabled = true;
-                // Re-enable after 10s if still disabled (agent failed to connect)
-                setTimeout(() => {
-                    const retryBtn = document.querySelector(`button[onclick=\\"startAgent('${n}')\\"]`);
-                    const agentState = (window.currentAgents || []).find(a => a.name === n);
-                    const stillWaiting = agentState ? (!agentState.in_game && !agentState.socket_connected) : true;
-                    if (retryBtn && stillWaiting) {
-                        retryBtn.disabled = false;
-                        retryBtn.textContent = 'Connect';
-                    }
-                }, 10000);
-            }
-            socket.emit('start-agent', n);
-        }
-        function stopAgent(n) { socket.emit('stop-agent', n); }
-        function destroyAgent(n) { socket.emit('destroy-agent', n); }
-        function disconnectAllAgents() { 
-            socket.emit('stop-all-agents'); 
-        }
-        function confirmShutdown() {
-            if (confirm('Are you sure you want to perform a full shutdown?\nThis will stop all agents and close the server.')) {
-                socket.emit('shutdown');
-            }
-        }
-        function sendMessage(n, m) {
-            if (!m || !m.trim()) return;
-            socket.emit('send-message', n, { from: 'ADMIN', message: m });
-            const input = document.getElementById(`messageInput-${n}`);
-            const btn = document.getElementById(`sendBtn-${n}`);
-            if (input) input.value = '';
-            if (btn) btn.disabled = true;
-        }
-        function onMsgInputChange(name) {
-            const input = document.getElementById(`messageInput-${name}`);
-            const btn = document.getElementById(`sendBtn-${name}`);
-            if (btn && input) {
-                btn.disabled = !(input.value && input.value.trim().length > 0);
+        // Update UI based on connection status
+        function updateConnectionStatus(status) {
+            const badge = document.getElementById('statusBadge');
+            badge.className = 'status-badge ' + status;
+            
+            if (status === 'online') {
+                badge.textContent = 'Connected';
+            } else if (status === 'connecting') {
+                badge.textContent = 'Connecting...';
+            } else {
+                badge.textContent = 'Disconnected';
             }
         }
 
-        function toggleDetails(name) {
-            const invSection = document.getElementById(`inventorySection-${name}`);
-            if (!invSection) return;
-            const visible = invSection.style.display !== 'none';
-            const newVisible = !visible;
-            invSection.style.display = newVisible ? '' : 'none';
-            inventoryOpen[name] = newVisible;
+        function updateControls() {
+            const connected = agentInGame;
+            document.getElementById('messageInput').disabled = !connected;
+            document.getElementById('sendBtn').disabled = !connected || !document.getElementById('messageInput').value.trim();
+            document.getElementById('stopActionBtn').disabled = !connected;
+            document.getElementById('stayStillBtn').disabled = !connected;
+            document.getElementById('restartBtn').disabled = !connected;
+            document.getElementById('connectBtn').disabled = connected || !agentName;
+            document.getElementById('disconnectBtn').disabled = !connected;
         }
-        window.toggleDetails = toggleDetails;
+
+        socket.on('connect', () => {
+            socket.emit('listen-to-agents');
+        });
+
+        socket.on('disconnect', () => {
+            updateConnectionStatus('offline');
+        });
+
+        socket.on('agents-status', (agents) => {
+            hasCheckedForAgent = true;
+            
+            if (agents.length === 0) {
+                // No agents exist, show onboarding
+                showOnboarding();
+                return;
+            }
+            
+            if (agents.length > 0) {
+                const agent = agents[0]; // Use first agent only
+                agentName = agent.name;
+                agentInGame = agent.in_game;
+                viewerPort = agent.viewerPort;
+                
+                document.getElementById('agentName').textContent = agentName;
+                updateConnectionStatus(agent.in_game ? 'online' : 'offline');
+                updateControls();
+
+                // Show viewer if enabled
+                if (agentInGame && agentSettings?.render_bot_view && viewerPort) {
+                    document.getElementById('viewerSection').style.display = 'block';
+                    document.getElementById('agentViewer').src = `http://localhost:${viewerPort}`;
+                } else {
+                    document.getElementById('viewerSection').style.display = 'none';
+                }
+
+                // Fetch settings if not already loaded
+                if (!agentSettings) {
+                    socket.emit('get-settings', agentName, (res) => {
+                        if (res.settings) {
+                            agentSettings = res.settings;
+                        }
+                    });
+                }
+            }
+        });
+
+        socket.on('state-update', (states) => {
+            if (!agentName || !states[agentName]) return;
+            
+            const state = states[agentName];
+            if (state.error) return;
+
+            const gp = state.gameplay || {};
+            
+            // Update health
+            if (typeof gp.health === 'number') {
+                const hMax = typeof gp.healthMax === 'number' ? gp.healthMax : 20;
+                document.getElementById('health').textContent = `${gp.health} / ${hMax}`;
+            }
+
+            // Update hunger
+            if (typeof gp.hunger === 'number') {
+                const fMax = typeof gp.hungerMax === 'number' ? gp.hungerMax : 20;
+                document.getElementById('hunger').textContent = `${gp.hunger} / ${fMax}`;
+            }
+
+            // Update position
+            if (gp.position) {
+                const p = gp.position;
+                document.getElementById('position').textContent = `${p.x}, ${p.y}, ${p.z}`;
+            }
+
+            // Update biome
+            if (gp.biome) {
+                document.getElementById('biome').textContent = gp.biome;
+            }
+
+            // Update gamemode
+            if (gp.gamemode) {
+                document.getElementById('gamemode').textContent = gp.gamemode;
+            }
+
+            // Update equipped item
+            if (state.inventory?.equipment) {
+                document.getElementById('equipped').textContent = state.inventory.equipment.mainHand || 'None';
+            }
+
+            // Update action
+            if (state.action?.current) {
+                document.getElementById('currentAction').textContent = state.action.current;
+            }
+
+            // Update inventory
+            if (state.inventory?.counts) {
+                const grid = document.getElementById('inventoryGrid');
+                const counts = state.inventory.counts;
+                if (Object.keys(counts).length > 0) {
+                    grid.innerHTML = Object.entries(counts)
+                        .map(([item, count]) => `<div class="inventory-item">${item}: ${count}</div>`)
+                        .join('');
+                } else {
+                    grid.innerHTML = '<div class="inventory-item">Empty</div>';
+                }
+            }
+        });
+
+        socket.on('bot-output', (name, message) => {
+            if (name === agentName) {
+                document.getElementById('lastMessage').textContent = message;
+            }
+        });
+
+        // Message input handling
+        document.getElementById('messageInput').addEventListener('input', () => {
+            const input = document.getElementById('messageInput');
+            const btn = document.getElementById('sendBtn');
+            btn.disabled = !agentInGame || !input.value.trim();
+        });
+
+        document.getElementById('messageInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !document.getElementById('sendBtn').disabled) {
+                sendMessage();
+            }
+        });
+
+        document.getElementById('sendBtn').addEventListener('click', sendMessage);
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            if (!message || !agentName) return;
+
+            socket.emit('send-message', agentName, { from: 'ADMIN', message });
+            input.value = '';
+            document.getElementById('sendBtn').disabled = true;
+        }
+
+        // Control buttons
+        document.getElementById('stopActionBtn').addEventListener('click', () => {
+            if (agentName) {
+                socket.emit('send-message', agentName, { from: 'ADMIN', message: '!stop' });
+            }
+        });
+
+        document.getElementById('stayStillBtn').addEventListener('click', () => {
+            if (agentName) {
+                socket.emit('send-message', agentName, { from: 'ADMIN', message: '!stay(-1)' });
+            }
+        });
+
+        document.getElementById('restartBtn').addEventListener('click', () => {
+            if (agentName) {
+                socket.emit('restart-agent', agentName);
+            }
+        });
+
+        document.getElementById('connectBtn').addEventListener('click', () => {
+            if (agentName) {
+                updateConnectionStatus('connecting');
+                socket.emit('start-agent', agentName);
+            }
+        });
+
+        document.getElementById('disconnectBtn').addEventListener('click', () => {
+            if (agentName) {
+                socket.emit('stop-agent', agentName);
+            }
+        });
     </script>
 </body>
 </html> 

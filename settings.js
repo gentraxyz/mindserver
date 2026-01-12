@@ -10,7 +10,7 @@ const settings = {
 
     // Worker URL for LLM requests (when using worker-based models)
     // Set this to your deployed Cloudflare Worker URL, or leave empty for local development
-    "worker_url": "https://mindcraft-worker.webmaster-e1c.workers.dev", // e.g., "https://mindcraft-worker.your-account.workers.dev"
+    "worker_url": "https://mindserver-worker.webmaster-e1c.workers.dev", // e.g., "https://mindserver-worker.your-account.workers.dev"
     
     "base_profile": "assistant", // survival, assistant, creative, or god_mode
     "profiles": [

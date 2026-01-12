@@ -1,9 +1,9 @@
-<h1 align="center">🧠mindcraft⛏️</h1>
+<h1 align="center">🧠MindServer⛏️</h1>
 <h1 align="center">
   <a href="https://trendshift.io/repositories/9163" target="_blank"><img src="https://trendshift.io/api/badge/repositories/9163" alt="kolbytn%2Fmindcraft | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 </h1>
 
-<p align="center">Crafting minds for Minecraft with LLMs and <a href="https://prismarinejs.github.io/mineflayer/#/">Mineflayer!</a></p>
+<p align="center">AI-powered Minecraft agents with LLMs and <a href="https://prismarinejs.github.io/mineflayer/#/">Mineflayer!</a></p>
 
 <p align="center">
   <a href="https://github.com/mindcraft-bots/mindcraft/blob/main/FAQ.md">FAQ</a> | 
@@ -133,13 +133,13 @@ The worker provides a centralized LLM API proxy using OpenRouter. This is the **
    npm run deploy
    ```
 
-4. Note your worker URL (e.g., `https://mindcraft-worker.your-account.workers.dev`)
+4. Note your worker URL (e.g., `https://mindserver-worker.your-account.workers.dev`)
 
 ### Configure the Client to Use the Worker
 
 1. Set the worker URL in `settings.js`:
    ```javascript
-   "worker_url": "https://mindcraft-worker.your-account.workers.dev"
+   "worker_url": "https://mindserver-worker.your-account.workers.dev"
    ```
 
 2. Use a worker-based profile in your agent configuration:
@@ -172,7 +172,7 @@ To connect to online servers your bot will need an official Microsoft/Minecraft 
 > [!Important]
 > The bot's name in the profile.json must exactly match the Minecraft profile name! Otherwise the bot will spam talk to itself.
 
-To use different accounts, Mindcraft will connect with the account that the Minecraft launcher is currently using. You can switch accounts in the launcher, then run `node main.js`, then switch to your main account after the bot has connected.
+To use different accounts, MindServer will connect with the account that the Minecraft launcher is currently using. You can switch accounts in the launcher, then run `node main.js`, then switch to your main account after the bot has connected.
 
 ## Tasks
 
@@ -217,7 +217,7 @@ If you want more optimization and automatic launching of the minecraft world, yo
 If you intend to `allow_insecure_coding`, it is a good idea to run the app in a docker container to reduce risks of running unknown code. This is strongly recommended before connecting to remote servers, although still does not guarantee complete safety.
 
 ```bash
-docker build -t mindcraft . && docker run --rm --add-host=host.docker.internal:host-gateway -p 8080:8080 -p 3000-3003:3000-3003 -e SETTINGS_JSON='{"auto_open_ui":false,"profiles":["./profiles/gemini.json"],"host":"host.docker.internal"}' --volume ./keys.json:/app/keys.json --name mindcraft mindcraft
+docker build -t mindserver . && docker run --rm --add-host=host.docker.internal:host-gateway -p 8080:8080 -p 3000-3003:3000-3003 -e SETTINGS_JSON='{"auto_open_ui":false,"profiles":["./profiles/gemini.json"],"host":"host.docker.internal"}' --volume ./keys.json:/app/keys.json --name mindserver mindserver
 ```
 or simply
 ```bash
@@ -312,7 +312,7 @@ Thanks to all who contributed to the project, especially the official developmen
 ## Citation:
 This work is published in the paper [Collaborating Action by Action: A Multi-agent LLM Framework for Embodied Reasoning](https://arxiv.org/abs/2504.17950). Please use this citation if you use this project in your research:
 ```
-@article{mindcraft2025,
+@article{mindserver2025,
   title = {Collaborating Action by Action: A Multi-agent LLM Framework for Embodied Reasoning},
   author = {White*, Isadora and Nottingham*, Kolby and Maniar, Ayush and Robinson, Max and Lillemark, Hansen and Maheshwari, Mehul and Qin, Lianhui and Ammanabrolu, Prithviraj},
   journal = {arXiv preprint arXiv:2504.17950},

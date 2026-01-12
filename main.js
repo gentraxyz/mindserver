@@ -1,4 +1,4 @@
-import * as Mindcraft from './src/mindcraft/mindcraft.js';
+import * as MindServer from './src/mindcraft/mindcraft.js';
 import settings from './settings.js';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
@@ -66,10 +66,10 @@ if (process.env.LOG_ALL) {
     settings.log_all_prompts = process.env.LOG_ALL;
 }
 
-Mindcraft.init(true, settings.mindserver_port, settings.auto_open_ui);
+MindServer.init(true, settings.mindserver_port, settings.auto_open_ui);
 
 for (let profile of settings.profiles) {
     const profile_json = JSON.parse(readFileSync(profile, 'utf8'));
     settings.profile = profile_json;
-    Mindcraft.createAgent(settings);
+    MindServer.createAgent(settings);
 }

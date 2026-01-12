@@ -3,7 +3,7 @@ import express from 'express';
 import http from 'http';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import * as mindcraft from './mindcraft.js';
+import * as mindserver from './mindcraft.js';
 import { readFileSync } from 'fs';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -84,11 +84,11 @@ export function createMindServer(host_public = false, port = 8080) {
                     callback({ success: false, error: 'Agent already exists' });
                     return;
                 }
-                let returned = await mindcraft.createAgent(settings);
+                let returned = await mindserver.createAgent(settings);
                 callback({ success: returned.success, error: returned.error });
                 let name = settings.profile.name;
                 if (!returned.success && agent_connections[name]) {
-                    mindcraft.destroyAgent(name);
+                    mindserver.destroyAgent(name);
                     delete agent_connections[name];
                 }
                 agentsStatusUpdate();
@@ -161,16 +161,16 @@ export function createMindServer(host_public = false, port = 8080) {
         });
 
         socket.on('stop-agent', (agentName) => {
-            mindcraft.stopAgent(agentName);
+            mindserver.stopAgent(agentName);
         });
 
         socket.on('start-agent', (agentName) => {
-            mindcraft.startAgent(agentName);
+            mindserver.startAgent(agentName);
         });
 
         socket.on('destroy-agent', (agentName) => {
             if (agent_connections[agentName]) {
-                mindcraft.destroyAgent(agentName);
+                mindserver.destroyAgent(agentName);
                 delete agent_connections[agentName];
             }
             agentsStatusUpdate();
@@ -179,14 +179,14 @@ export function createMindServer(host_public = false, port = 8080) {
         socket.on('stop-all-agents', () => {
             console.log('Killing all agents');
             for (let agentName in agent_connections) {
-                mindcraft.stopAgent(agentName);
+                mindserver.stopAgent(agentName);
             }
         });
 
         socket.on('shutdown', () => {
             console.log('Shutting down');
             for (let agentName in agent_connections) {
-                mindcraft.stopAgent(agentName);
+                mindserver.stopAgent(agentName);
             }
             // wait 2 seconds
             setTimeout(() => {
