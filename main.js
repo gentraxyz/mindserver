@@ -68,8 +68,15 @@ if (process.env.LOG_ALL) {
 
 MindServer.init(true, settings.mindserver_port, settings.auto_open_ui);
 
-for (let profile of settings.profiles) {
-    const profile_json = JSON.parse(readFileSync(profile, 'utf8'));
-    settings.profile = profile_json;
-    MindServer.createAgent(settings);
+// Store settings globally for onboarding to use
+global.defaultSettings = settings;
+
+// Only auto-create agents if running with command line task or if skip_onboarding is set
+if (args.task_path || process.env.SKIP_ONBOARDING === 'true') {
+    for (let profile of settings.profiles) {
+        const profile_json = JSON.parse(readFileSync(profile, 'utf8'));
+        settings.profile = profile_json;
+        MindServer.createAgent(settings);
+    }
 }
+// Otherwise, wait for user to complete onboarding via web UI

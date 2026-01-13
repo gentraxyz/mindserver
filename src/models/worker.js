@@ -16,6 +16,7 @@ export class WorkerModel {
         this.model_name = model_name || 'openai/gpt-4o-mini';
         // Priority: constructor url > settings.worker_url > env var > localhost
         this.url = url || settings.worker_url || process.env.WORKER_URL || 'http://localhost:8787';
+        console.log(`[WorkerModel] Using URL: ${this.url} (from: url=${url}, settings=${settings.worker_url}, env=${process.env.WORKER_URL})`);
     }
 
     async sendRequest(turns, systemMessage, stop_seq = '*') {

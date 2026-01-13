@@ -56,10 +56,18 @@ export class Prompter {
             max_tokens = this.profile.max_tokens;
 
         let chat_model_profile = selectAPI(this.profile.model);
+        // Add worker_url if available (for worker models)
+        if (!chat_model_profile.url && settings.worker_url && chat_model_profile.api === 'worker') {
+            chat_model_profile.url = settings.worker_url;
+        }
         this.chat_model = createModel(chat_model_profile);
 
         if (this.profile.code_model) {
             let code_model_profile = selectAPI(this.profile.code_model);
+            // Add worker_url if available (for worker models)
+            if (!code_model_profile.url && settings.worker_url && code_model_profile.api === 'worker') {
+                code_model_profile.url = settings.worker_url;
+            }
             this.code_model = createModel(code_model_profile);
         }
         else {
@@ -68,6 +76,10 @@ export class Prompter {
 
         if (this.profile.vision_model) {
             let vision_model_profile = selectAPI(this.profile.vision_model);
+            // Add worker_url if available (for worker models)
+            if (!vision_model_profile.url && settings.worker_url && vision_model_profile.api === 'worker') {
+                vision_model_profile.url = settings.worker_url;
+            }
             this.vision_model = createModel(vision_model_profile);
         }
         else {
@@ -79,6 +91,10 @@ export class Prompter {
         if (this.profile.embedding) {
             try {
                 embedding_model_profile = selectAPI(this.profile.embedding);
+                // Add worker_url if available (for worker models)
+                if (!embedding_model_profile.url && settings.worker_url && embedding_model_profile.api === 'worker') {
+                    embedding_model_profile.url = settings.worker_url;
+                }
             } catch (e) {
                 embedding_model_profile = null;
             }

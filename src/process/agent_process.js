@@ -5,11 +5,17 @@ export class AgentProcess {
     constructor(name, port) {
         this.name = name;
         this.port = port;
+        this.worker_url = null;
     }
 
-    start(load_memory=false, init_message=null, count_id=0) {
+    start(load_memory=false, init_message=null, count_id=0, worker_url=null) {
         this.count_id = count_id;
         this.running = true;
+
+        // Store worker_url for restarts
+        if (worker_url) {
+            this.worker_url = worker_url;
+        }
 
         let args = ['src/process/init_agent.js', this.name];
         args.push('-n', this.name);
@@ -20,9 +26,15 @@ export class AgentProcess {
             args.push('-m', init_message);
         args.push('-p', this.port);
 
+        const env = { ...process.env };
+        if (this.worker_url) {
+            env.WORKER_URL = this.worker_url;
+        }
+
         const agentProcess = spawn('node', args, {
             stdio: 'inherit',
             stderr: 'inherit',
+            env: env
         });
         
         let last_restart = Date.now();
@@ -43,7 +55,7 @@ export class AgentProcess {
                     return;
                 }
                 console.log('Restarting agent...');
-                this.start(true, 'Agent process restarted.', count_id, this.port);
+                this.start(true, 'Agent process restarted.', count_id, this.worker_url);
                 last_restart = Date.now();
             }
         });
@@ -71,11 +83,11 @@ export class AgentProcess {
             this.process.once('exit', () => {
                  clearTimeout(restartTimeout);
                  console.log(`Stopped hanging agent ${this.name}. Now restarting.`);
-                 this.start(true, 'Agent process restarted.', this.count_id);
+                 this.start(true, 'Agent process restarted.', this.count_id, this.worker_url);
             });
             this.stop(); // sends SIGINT
         } else {
-             this.start(true, 'Agent process restarted.', this.count_id);
+             this.start(true, 'Agent process restarted.', this.count_id, this.worker_url);
         }
     }
 }

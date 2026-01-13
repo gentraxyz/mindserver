@@ -58,7 +58,7 @@ export async function createAgent(settings) {
         }
 
         const agentProcess = new AgentProcess(agent_name, mindserver_port);
-        agentProcess.start(load_memory, init_message, agentIndex);
+        agentProcess.start(load_memory, init_message, agentIndex, settings.worker_url);
         agent_processes[settings.profile.name] = agentProcess;
     } catch (error) {
         console.error(`Error creating agent ${agent_name}:`, error);

@@ -224,19 +224,23 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(0, 0, 0, 0.95);
             display: none;
             align-items: center;
             justify-content: center;
             z-index: 1000;
+            overflow-y: auto;
         }
         .onboarding-card {
             background: #2d2d2d;
             border-radius: 12px;
             padding: 40px;
-            max-width: 500px;
+            max-width: 600px;
             width: 90%;
             box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            margin: 20px;
+            max-height: 90vh;
+            overflow-y: auto;
         }
         .onboarding-title {
             font-size: 2em;
@@ -274,6 +278,21 @@
             outline: none;
             border-color: #4CAF50;
         }
+        .form-select {
+            width: 100%;
+            background: #3a3a3a;
+            border: 2px solid #555;
+            color: #e0e0e0;
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 1.05em;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+        .form-select:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
         .form-hint {
             color: #888;
             font-size: 0.9em;
@@ -284,6 +303,33 @@
             font-size: 0.9em;
             margin-top: 6px;
             display: none;
+        }
+        .form-checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .form-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        .form-checkbox-label {
+            color: #e0e0e0;
+            font-size: 1em;
+            cursor: pointer;
+        }
+        .settings-section {
+            background: #3a3a3a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+        }
+        .settings-section-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #4CAF50;
+            margin-bottom: 16px;
         }
         .onboarding-btn {
             width: 100%;
@@ -326,16 +372,64 @@
     <div id="onboardingOverlay" class="onboarding-overlay">
         <div class="onboarding-card">
             <h1 class="onboarding-title">Welcome to MindServer</h1>
-            <p class="onboarding-subtitle">Let's create your first AI agent</p>
+            <p class="onboarding-subtitle">Configure your AI agent before joining the world</p>
             
-            <div class="form-group">
-                <label class="form-label" for="agentNameInput">Agent Name</label>
-                <input type="text" id="agentNameInput" class="form-input" placeholder="Enter a name for your agent..." autocomplete="off">
-                <div class="form-hint">Choose a unique name for your Minecraft bot</div>
-                <div class="form-error" id="nameError"></div>
+            <div class="settings-section">
+                <h3 class="settings-section-title">Agent Identity</h3>
+                <div class="form-group">
+                    <label class="form-label" for="agentNameInput">Agent Name</label>
+                    <input type="text" id="agentNameInput" class="form-input" placeholder="Enter a name for your agent..." autocomplete="off">
+                    <div class="form-hint">Choose a unique name for your Minecraft bot</div>
+                    <div class="form-error" id="nameError"></div>
+                </div>
             </div>
 
-            <button id="createAgentBtn" class="onboarding-btn">Create Agent</button>
+            <div class="settings-section">
+                <h3 class="settings-section-title">Behavior Settings</h3>
+                
+                <div class="form-group">
+                    <label class="form-label" for="baseProfileSelect">Base Profile</label>
+                    <select id="baseProfileSelect" class="form-select">
+                        <option value="assistant">Assistant - Helpful and cooperative</option>
+                        <option value="survival">Survival - Focused on survival gameplay</option>
+                        <option value="creative">Creative - Building and creativity focused</option>
+                        <option value="god_mode">God Mode - Full control and capabilities</option>
+                    </select>
+                    <div class="form-hint">Choose the agent's base behavior style</div>
+                </div>
+
+                <div class="form-group">
+                    <div class="form-checkbox-wrapper">
+                        <input type="checkbox" id="allowInsecureCodingCheckbox" class="form-checkbox">
+                        <label class="form-checkbox-label" for="allowInsecureCodingCheckbox">
+                            Enable Advanced Coding (newAction command)
+                        </label>
+                    </div>
+                    <div class="form-hint">⚠️ Allows the AI to write and execute code. Enable at your own risk.</div>
+                </div>
+
+                <div class="form-group">
+                    <div class="form-checkbox-wrapper">
+                        <input type="checkbox" id="allowVisionCheckbox" class="form-checkbox">
+                        <label class="form-checkbox-label" for="allowVisionCheckbox">
+                            Enable Vision Capabilities
+                        </label>
+                    </div>
+                    <div class="form-hint">Allows the AI to interpret screenshots as inputs</div>
+                </div>
+
+                <div class="form-group">
+                    <div class="form-checkbox-wrapper">
+                        <input type="checkbox" id="renderBotViewCheckbox" class="form-checkbox">
+                        <label class="form-checkbox-label" for="renderBotViewCheckbox">
+                            Render Bot's View
+                        </label>
+                    </div>
+                    <div class="form-hint">Show what the bot sees in the browser</div>
+                </div>
+            </div>
+
+            <button id="finishOnboardingBtn" class="onboarding-btn">Finish & Join Server</button>
         </div>
     </div>
 
@@ -430,7 +524,11 @@
         // Onboarding functionality
         const onboardingOverlay = document.getElementById('onboardingOverlay');
         const agentNameInput = document.getElementById('agentNameInput');
-        const createAgentBtn = document.getElementById('createAgentBtn');
+        const baseProfileSelect = document.getElementById('baseProfileSelect');
+        const allowInsecureCodingCheckbox = document.getElementById('allowInsecureCodingCheckbox');
+        const allowVisionCheckbox = document.getElementById('allowVisionCheckbox');
+        const renderBotViewCheckbox = document.getElementById('renderBotViewCheckbox');
+        const finishOnboardingBtn = document.getElementById('finishOnboardingBtn');
         const nameError = document.getElementById('nameError');
 
         function showOnboarding() {
@@ -463,20 +561,20 @@
             if (error) {
                 nameError.textContent = error;
                 nameError.style.display = 'block';
-                createAgentBtn.disabled = true;
+                finishOnboardingBtn.disabled = true;
             } else {
                 nameError.style.display = 'none';
-                createAgentBtn.disabled = false;
+                finishOnboardingBtn.disabled = false;
             }
         });
 
         agentNameInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !createAgentBtn.disabled) {
-                createAgentBtn.click();
+            if (e.key === 'Enter' && !finishOnboardingBtn.disabled) {
+                finishOnboardingBtn.click();
             }
         });
 
-        createAgentBtn.addEventListener('click', async () => {
+        finishOnboardingBtn.addEventListener('click', async () => {
             const name = agentNameInput.value.trim();
             const error = validateAgentName(name);
             
@@ -486,41 +584,32 @@
                 return;
             }
 
-            createAgentBtn.disabled = true;
-            createAgentBtn.innerHTML = '<span class="loading-spinner"></span>Creating agent...';
+            finishOnboardingBtn.disabled = true;
+            finishOnboardingBtn.innerHTML = '<span class="loading-spinner"></span>Creating agent...';
 
-            // Fetch settings spec first
-            try {
-                const specResponse = await fetch('/settings_spec.json');
-                const settingsSpec = await specResponse.json();
+            // Build settings from onboarding form
+            const onboardingSettings = {
+                name: name,
+                base_profile: baseProfileSelect.value,
+                allow_insecure_coding: allowInsecureCodingCheckbox.checked,
+                allow_vision: allowVisionCheckbox.checked,
+                render_bot_view: renderBotViewCheckbox.checked
+            };
 
-                // Build settings with defaults
-                const settings = { profile: { name: name } };
-                Object.keys(settingsSpec).forEach(key => {
-                    if (key !== 'profile') {
-                        settings[key] = settingsSpec[key].default;
-                    }
-                });
-
-                // Create agent
-                socket.emit('create-agent', settings, (response) => {
-                    if (response.success) {
-                        hideOnboarding();
-                        agentNameInput.value = '';
-                        createAgentBtn.innerHTML = 'Create Agent';
-                    } else {
-                        nameError.textContent = response.error || 'Failed to create agent';
-                        nameError.style.display = 'block';
-                        createAgentBtn.disabled = false;
-                        createAgentBtn.innerHTML = 'Create Agent';
-                    }
-                });
-            } catch (err) {
-                nameError.textContent = 'Error loading settings: ' + err.message;
-                nameError.style.display = 'block';
-                createAgentBtn.disabled = false;
-                createAgentBtn.innerHTML = 'Create Agent';
-            }
+            // Send onboarding completion to server
+            socket.emit('complete-onboarding', onboardingSettings, (response) => {
+                if (response.success) {
+                    hideOnboarding();
+                    agentNameInput.value = '';
+                    finishOnboardingBtn.innerHTML = 'Finish & Join Server';
+                    finishOnboardingBtn.disabled = false;
+                } else {
+                    nameError.textContent = response.error || 'Failed to create agent';
+                    nameError.style.display = 'block';
+                    finishOnboardingBtn.disabled = false;
+                    finishOnboardingBtn.innerHTML = 'Finish & Join Server';
+                }
+            });
         });
 
         // Update UI based on connection status

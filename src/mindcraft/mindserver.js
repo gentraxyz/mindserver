@@ -99,6 +99,92 @@ export function createMindServer(host_public = false, port = 8080) {
             }
         });
 
+        socket.on('complete-onboarding', async (onboardingSettings, callback) => {
+            console.log('Completing onboarding with settings:', onboardingSettings);
+            
+            try {
+                // Get default settings from global (set in main.js)
+                const defaultSettings = global.defaultSettings || {};
+                
+                // Fetch settings spec
+                const settingsSpec = settings_spec;
+                
+                // Build complete settings object starting with defaults
+                const settings = {};
+                Object.keys(settingsSpec).forEach(key => {
+                    if (key !== 'profile') {
+                        settings[key] = defaultSettings[key] !== undefined 
+                            ? defaultSettings[key] 
+                            : settingsSpec[key].default;
+                    }
+                });
+
+                // Load base profile defaults (modes, prompts, etc.)
+                const baseProfileName = onboardingSettings.base_profile || 'assistant';
+                const baseProfilePath = path.join(__dirname, '..', '..', 'profiles', 'defaults', `${baseProfileName}.json`);
+                let baseProfile = {};
+                try {
+                    baseProfile = JSON.parse(readFileSync(baseProfilePath, 'utf8'));
+                } catch (err) {
+                    console.warn(`Could not load base profile ${baseProfileName}:`, err.message);
+                }
+
+                // Load the first configured profile to get the model/API configuration
+                let modelProfile = {};
+                if (defaultSettings.profiles && defaultSettings.profiles.length > 0) {
+                    try {
+                        const profilePath = defaultSettings.profiles[0];
+                        modelProfile = JSON.parse(readFileSync(profilePath, 'utf8'));
+                        console.log(`Loaded model configuration from ${profilePath}`);
+                    } catch (err) {
+                        console.warn(`Could not load profile from ${defaultSettings.profiles[0]}:`, err.message);
+                    }
+                }
+
+                // Apply onboarding customizations
+                settings.profile = { 
+                    ...modelProfile,  // Get model/api/embedding from first configured profile
+                    ...baseProfile,   // Merge base profile properties (modes, prompts, etc.)
+                    name: onboardingSettings.name  // Override name with onboarding selection
+                };
+                settings.base_profile = baseProfileName;
+                settings.allow_insecure_coding = onboardingSettings.allow_insecure_coding || false;
+                settings.allow_vision = onboardingSettings.allow_vision || false;
+                settings.render_bot_view = onboardingSettings.render_bot_view || false;
+
+                console.log(`Profile for ${settings.profile.name}:`, settings.profile);
+
+                // Check if agent already exists
+                if (settings.profile.name in agent_connections) {
+                    callback({ success: false, error: 'Agent already exists' });
+                    return;
+                }
+
+                // Create the agent
+                let returned = await mindserver.createAgent(settings);
+                
+                if (returned.success) {
+                    console.log(`Agent ${settings.profile.name} created successfully via onboarding`);
+                    callback({ success: true });
+                } else {
+                    console.error(`Failed to create agent: ${returned.error}`);
+                    callback({ success: false, error: returned.error });
+                    
+                    // Cleanup if creation failed
+                    let name = settings.profile.name;
+                    if (agent_connections[name]) {
+                        mindserver.destroyAgent(name);
+                        delete agent_connections[name];
+                    }
+                }
+                
+                agentsStatusUpdate();
+            } catch (error) {
+                console.error('Error in onboarding:', error);
+                callback({ success: false, error: error.message || 'Unknown error occurred' });
+            }
+        });
+
         socket.on('get-settings', (agentName, callback) => {
             if (agent_connections[agentName]) {
                 callback({ settings: agent_connections[agentName].settings });
