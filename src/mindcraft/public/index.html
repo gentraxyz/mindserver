@@ -7,6 +7,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="/socket.io/socket.io.js"></script>
     <style>
+        :root {
+            --scrollbar-track: rgba(45, 45, 60, 0.3);
+            --scrollbar-thumb: rgba(76, 175, 80, 0.4);
+            --scrollbar-thumb-hover: rgba(76, 175, 80, 0.6);
+        }
         * {
             margin: 0;
             padding: 0;
@@ -40,7 +45,7 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            /* Fallback for browsers that don't support background-clip */
+            /* Fallback for browsers that don't support background-clip. */
         }
         @supports not (background-clip: text) or not (-webkit-background-clip: text) {
             .header h1 {
@@ -245,8 +250,8 @@
             transition: width 0.6s, height 0.6s;
         }
         .btn:hover::before {
-            width: 300px;
-            height: 300px;
+            width: 200%;
+            height: 200%;
         }
         .btn:disabled {
             opacity: 0.4;
@@ -516,8 +521,8 @@
             transition: width 0.6s, height 0.6s;
         }
         .onboarding-btn:hover:not(:disabled)::before {
-            width: 400px;
-            height: 400px;
+            width: 200%;
+            height: 200%;
         }
         .onboarding-btn:hover:not(:disabled) {
             transform: translateY(-2px);
@@ -552,7 +557,7 @@
         .inventory-grid {
             /* Firefox */
             scrollbar-width: thin;
-            scrollbar-color: rgba(76, 175, 80, 0.4) rgba(45, 45, 60, 0.3);
+            scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
         }
         .left-panel::-webkit-scrollbar,
         .right-panel::-webkit-scrollbar,
@@ -564,21 +569,21 @@
         .right-panel::-webkit-scrollbar-track,
         .onboarding-card::-webkit-scrollbar-track,
         .inventory-grid::-webkit-scrollbar-track {
-            background: rgba(45, 45, 60, 0.3);
+            background: var(--scrollbar-track);
             border-radius: 4px;
         }
         .left-panel::-webkit-scrollbar-thumb,
         .right-panel::-webkit-scrollbar-thumb,
         .onboarding-card::-webkit-scrollbar-thumb,
         .inventory-grid::-webkit-scrollbar-thumb {
-            background: rgba(76, 175, 80, 0.4);
+            background: var(--scrollbar-thumb);
             border-radius: 4px;
         }
         .left-panel::-webkit-scrollbar-thumb:hover,
         .right-panel::-webkit-scrollbar-thumb:hover,
         .onboarding-card::-webkit-scrollbar-thumb:hover,
         .inventory-grid::-webkit-scrollbar-thumb:hover {
-            background: rgba(76, 175, 80, 0.6);
+            background: var(--scrollbar-thumb-hover);
         }
     </style>
 </head>
