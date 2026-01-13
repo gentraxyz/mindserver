@@ -129,21 +129,28 @@ export function createMindServer(host_public = false, port = 8080) {
                     console.warn(`Could not load base profile ${baseProfileName}:`, err.message);
                 }
 
-                // Load the first configured profile to get the model/API configuration
-                let modelProfile = {};
-                if (defaultSettings.profiles && defaultSettings.profiles.length > 0) {
-                    try {
-                        const profilePath = defaultSettings.profiles[0];
-                        modelProfile = JSON.parse(readFileSync(profilePath, 'utf8'));
-                        console.log(`Loaded model configuration from ${profilePath}`);
-                    } catch (err) {
-                        console.warn(`Could not load profile from ${defaultSettings.profiles[0]}:`, err.message);
+                // Build model configuration from selected model
+                let modelConfig = {};
+                if (onboardingSettings.model) {
+                    modelConfig.model = onboardingSettings.model;
+                    console.log(`Using selected model: ${onboardingSettings.model}`);
+                } else {
+                    // Fallback to first configured profile if model not selected
+                    if (defaultSettings.profiles && defaultSettings.profiles.length > 0) {
+                        try {
+                            const profilePath = defaultSettings.profiles[0];
+                            const modelProfile = JSON.parse(readFileSync(profilePath, 'utf8'));
+                            modelConfig = modelProfile;
+                            console.log(`Loaded model configuration from ${profilePath}`);
+                        } catch (err) {
+                            console.warn(`Could not load profile from ${defaultSettings.profiles[0]}:`, err.message);
+                        }
                     }
                 }
 
                 // Apply onboarding customizations
                 settings.profile = { 
-                    ...modelProfile,  // Get model/api/embedding from first configured profile
+                    ...modelConfig,   // Get model configuration from selected model or first profile
                     ...baseProfile,   // Merge base profile properties (modes, prompts, etc.)
                     name: onboardingSettings.name  // Override name with onboarding selection
                 };
