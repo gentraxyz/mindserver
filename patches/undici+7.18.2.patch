@@ -1,0 +1,13 @@
+diff --git a/node_modules/undici/lib/web/webidl/index.js b/node_modules/undici/lib/web/webidl/index.js
+index 5425715..22a1409 100644
+--- a/node_modules/undici/lib/web/webidl/index.js
++++ b/node_modules/undici/lib/web/webidl/index.js
+@@ -530,7 +530,7 @@ webidl.is.USVString = function (value) {
+ webidl.is.ReadableStream = webidl.util.MakeTypeAssertion(ReadableStream)
+ webidl.is.Blob = webidl.util.MakeTypeAssertion(Blob)
+ webidl.is.URLSearchParams = webidl.util.MakeTypeAssertion(URLSearchParams)
+-webidl.is.File = webidl.util.MakeTypeAssertion(File)
++webidl.is.File = typeof File !== 'undefined' ? webidl.util.MakeTypeAssertion(File) : () => false
+ webidl.is.URL = webidl.util.MakeTypeAssertion(URL)
+ webidl.is.AbortSignal = webidl.util.MakeTypeAssertion(AbortSignal)
+ webidl.is.MessagePort = webidl.util.MakeTypeAssertion(MessagePort)
