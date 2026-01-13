@@ -1,12 +1,13 @@
 /**
  * MindServer Cloudflare Worker
  * 
- * This worker acts as a proxy for LLM requests, routing them through OpenRouter.
+ * This worker acts as a proxy for LLM requests, routing them through OpenRouter or Cerebras.
  * The client sends chat completion requests to this worker, and the worker
- * forwards them to OpenRouter's API using the stored API key.
+ * forwards them to the appropriate provider's API using the stored API key.
  */
 
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const CEREBRAS_API_URL = 'https://api.cerebras.ai/v1/chat/completions';
 
 // CORS headers for browser requests
 const corsHeaders = {
@@ -16,20 +17,18 @@ const corsHeaders = {
 };
 
 /**
+ * Determine which provider to use based on model name
+ */
+function getProviderConfig(model) {
+  if (!model) return { provider: 'openrouter', url: OPENROUTER_API_URL };
+  if (model.startsWith('cerebras/')) return { provider: 'cerebras', url: CEREBRAS_API_URL };
+  return { provider: 'openrouter', url: OPENROUTER_API_URL };
+}
+
+/**
  * Handle chat completion requests
  */
 async function handleChatCompletion(request, env) {
-  const apiKey = env.OPENROUTER_API_KEY;
-  
-  if (!apiKey) {
-    return new Response(JSON.stringify({ 
-      error: 'OPENROUTER_API_KEY not configured in worker' 
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-
   try {
     const body = await request.json();
     
@@ -43,11 +42,36 @@ async function handleChatCompletion(request, env) {
       });
     }
 
-    // Forward request to OpenRouter
-    // Spread params first so specific parameters take precedence
+    const model = body.model || 'openai/gpt-4o-mini';
+    const { provider, url } = getProviderConfig(model);
+    
+    let apiKey;
+    if (provider === 'cerebras') {
+      apiKey = env.CEREBRAS_API_KEY;
+      if (!apiKey) {
+        return new Response(JSON.stringify({ 
+          error: 'CEREBRAS_API_KEY not configured in worker' 
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    } else {
+      apiKey = env.OPENROUTER_API_KEY;
+      if (!apiKey) {
+        return new Response(JSON.stringify({ 
+          error: 'OPENROUTER_API_KEY not configured in worker' 
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    // Prepare request payload
     const requestPayload = {
       ...(body.params || {}),
-      model: body.model || 'openai/gpt-4o-mini',
+      model,
       messages: body.messages,
     };
     
@@ -56,25 +80,31 @@ async function handleChatCompletion(request, env) {
     if (body.max_tokens !== undefined) requestPayload.max_tokens = body.max_tokens;
     if (body.temperature !== undefined) requestPayload.temperature = body.temperature;
 
-    const openRouterResponse = await fetch(OPENROUTER_API_URL, {
+    // Build headers based on provider
+    let headers = {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    };
+    
+    if (provider === 'openrouter') {
+      headers['HTTP-Referer'] = 'https://mindcraft.ai';
+      headers['X-Title'] = 'Mindcraft';
+    }
+
+    const response = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://mindcraft.ai',
-        'X-Title': 'Mindcraft',
-      },
+      headers,
       body: JSON.stringify(requestPayload),
     });
 
-    const responseData = await openRouterResponse.json();
+    const responseData = await response.json();
 
-    if (!openRouterResponse.ok) {
+    if (!response.ok) {
       return new Response(JSON.stringify({ 
-        error: responseData.error || 'OpenRouter request failed',
+        error: responseData.error || `${provider} request failed`,
         details: responseData
       }), {
-        status: openRouterResponse.status,
+        status: response.status,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }

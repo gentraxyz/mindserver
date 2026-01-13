@@ -101,6 +101,7 @@ export function createMindServer(host_public = false, port = 8080) {
 
         socket.on('complete-onboarding', async (onboardingSettings, callback) => {
             console.log('Completing onboarding with settings:', onboardingSettings);
+            console.log('DEBUG: Model field in onboarding:', onboardingSettings.model);
             
             try {
                 // Get default settings from global (set in main.js)
@@ -133,7 +134,7 @@ export function createMindServer(host_public = false, port = 8080) {
                 let modelConfig = {};
                 if (onboardingSettings.model) {
                     modelConfig.model = onboardingSettings.model;
-                    console.log(`Using selected model: ${onboardingSettings.model}`);
+                    console.log(`DEBUG: Using selected model: ${onboardingSettings.model}`);
                 } else {
                     // Fallback to first configured profile if model not selected
                     if (defaultSettings.profiles && defaultSettings.profiles.length > 0) {

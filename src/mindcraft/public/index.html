@@ -390,11 +390,11 @@
                 <div class="form-group">
                     <label class="form-label" for="modelSelect">AI Model</label>
                     <select id="modelSelect" class="form-select">
-                        <option value="openrouter/mistralai/devstral-2512:free" selected>Devstral (OpenRouter) - Free</option>
-                        <option value="openrouter/xiaomi/mimo-v2-flash:free">Xiaomi Mimo V2 Flash (OpenRouter) - Free</option>
-                        <option value="openrouter/x-ai/grok-4.1-fast">Grok 4.1 Fast (OpenRouter)</option>
-                        <option value="cerebras/zai-glm-4.6">ZAI GLM 4.6 (Cerebras)</option>
-                        <option value="cerebras/zai-glm-4.7">ZAI GLM 4.7 (Cerebras)</option>
+                        <option value="worker/mistralai/devstral-2512:free" selected>Devstral (OpenRouter) - Free</option>
+                        <option value="worker/xiaomi/mimo-v2-flash:free">Xiaomi Mimo V2 Flash (OpenRouter) - Free</option>
+                        <option value="worker/x-ai/grok-4.1-fast">Grok 4.1 Fast (OpenRouter)</option>
+                        <option value="worker/cerebras/zai-glm-4.6">ZAI GLM 4.6 (Cerebras)</option>
+                        <option value="worker/cerebras/zai-glm-4.7">ZAI GLM 4.7 (Cerebras)</option>
                     </select>
                     <div class="form-hint">Choose the AI model to power your agent</div>
                 </div>
@@ -613,6 +613,9 @@
                 allow_vision: allowVisionCheckbox.checked,
                 render_bot_view: renderBotViewCheckbox.checked
             };
+            
+            console.log('DEBUG: Selected model from form:', modelSelect.value);
+            console.log('DEBUG: Sending onboarding settings:', onboardingSettings);
 
             // Send onboarding completion to server
             socket.emit('complete-onboarding', onboardingSettings, (response) => {

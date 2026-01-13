@@ -1,0 +1,4 @@
+{
+    "name": "cerebras-glm46-bot",
+    "model": "worker/cerebras/zai-glm-4.6"
+}

@@ -1,0 +1,4 @@
+{
+    "name": "mimo-bot",
+    "model": "worker/xiaomi/mimo-v2-flash:free"
+}
