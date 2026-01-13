@@ -2,6 +2,9 @@
 <html>
 <head>
     <title>MindServer Agent</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="/socket.io/socket.io.js"></script>
     <style>
         * {
@@ -37,6 +40,12 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            /* Fallback for browsers that don't support background-clip */
+        }
+        @supports not (background-clip: text) or not (-webkit-background-clip: text) {
+            .header h1 {
+                color: #4CAF50;
+            }
         }
         .status-badge {
             padding: 8px 16px;
@@ -164,20 +173,6 @@
             max-height: 300px;
             overflow-y: auto;
             padding-right: 4px;
-        }
-        .inventory-grid::-webkit-scrollbar {
-            width: 6px;
-        }
-        .inventory-grid::-webkit-scrollbar-track {
-            background: rgba(45, 45, 60, 0.3);
-            border-radius: 3px;
-        }
-        .inventory-grid::-webkit-scrollbar-thumb {
-            background: rgba(76, 175, 80, 0.4);
-            border-radius: 3px;
-        }
-        .inventory-grid::-webkit-scrollbar-thumb:hover {
-            background: rgba(76, 175, 80, 0.6);
         }
         .inventory-item {
             background: rgba(45, 45, 60, 0.5);
@@ -373,6 +368,11 @@
             text-align: center;
             letter-spacing: -0.5px;
         }
+        @supports not (background-clip: text) or not (-webkit-background-clip: text) {
+            .onboarding-title {
+                color: #4CAF50;
+            }
+        }
         .onboarding-subtitle {
             color: #9ca3af;
             text-align: center;
@@ -483,6 +483,11 @@
             margin-bottom: 20px;
             letter-spacing: -0.3px;
         }
+        @supports not (background-clip: text) or not (-webkit-background-clip: text) {
+            .settings-section-title {
+                color: #4CAF50;
+            }
+        }
         .onboarding-btn {
             width: 100%;
             padding: 16px;
@@ -541,26 +546,38 @@
             100% { transform: rotate(360deg); }
         }
         /* Custom scrollbar styles */
+        .left-panel,
+        .right-panel,
+        .onboarding-card,
+        .inventory-grid {
+            /* Firefox */
+            scrollbar-width: thin;
+            scrollbar-color: rgba(76, 175, 80, 0.4) rgba(45, 45, 60, 0.3);
+        }
         .left-panel::-webkit-scrollbar,
         .right-panel::-webkit-scrollbar,
-        .onboarding-card::-webkit-scrollbar {
+        .onboarding-card::-webkit-scrollbar,
+        .inventory-grid::-webkit-scrollbar {
             width: 8px;
         }
         .left-panel::-webkit-scrollbar-track,
         .right-panel::-webkit-scrollbar-track,
-        .onboarding-card::-webkit-scrollbar-track {
+        .onboarding-card::-webkit-scrollbar-track,
+        .inventory-grid::-webkit-scrollbar-track {
             background: rgba(45, 45, 60, 0.3);
             border-radius: 4px;
         }
         .left-panel::-webkit-scrollbar-thumb,
         .right-panel::-webkit-scrollbar-thumb,
-        .onboarding-card::-webkit-scrollbar-thumb {
+        .onboarding-card::-webkit-scrollbar-thumb,
+        .inventory-grid::-webkit-scrollbar-thumb {
             background: rgba(76, 175, 80, 0.4);
             border-radius: 4px;
         }
         .left-panel::-webkit-scrollbar-thumb:hover,
         .right-panel::-webkit-scrollbar-thumb:hover,
-        .onboarding-card::-webkit-scrollbar-thumb:hover {
+        .onboarding-card::-webkit-scrollbar-thumb:hover,
+        .inventory-grid::-webkit-scrollbar-thumb:hover {
             background: rgba(76, 175, 80, 0.6);
         }
     </style>
