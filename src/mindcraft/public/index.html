@@ -385,6 +385,22 @@
             </div>
 
             <div class="settings-section">
+                <h3 class="settings-section-title">AI Model</h3>
+                
+                <div class="form-group">
+                    <label class="form-label" for="modelSelect">AI Model</label>
+                    <select id="modelSelect" class="form-select">
+                        <option value="openrouter/mistralai/devstral-2512:free">Devstral (OpenRouter) - Free</option>
+                        <option value="openrouter/xiaomi/mimo-v2-flash:free">Xiaomi Mimo V2 Flash (OpenRouter) - Free</option>
+                        <option value="openrouter/x-ai/grok-4.1-fast">Grok 4.1 Fast (OpenRouter)</option>
+                        <option value="cerebras/zai-glm-4.6">ZAI GLM 4.6 (Cerebras)</option>
+                        <option value="cerebras/zai-glm-4.7">ZAI GLM 4.7 (Cerebras)</option>
+                    </select>
+                    <div class="form-hint">Choose the AI model to power your agent</div>
+                </div>
+            </div>
+
+            <div class="settings-section">
                 <h3 class="settings-section-title">Behavior Settings</h3>
                 
                 <div class="form-group">
@@ -524,6 +540,7 @@
         // Onboarding functionality
         const onboardingOverlay = document.getElementById('onboardingOverlay');
         const agentNameInput = document.getElementById('agentNameInput');
+        const modelSelect = document.getElementById('modelSelect');
         const baseProfileSelect = document.getElementById('baseProfileSelect');
         const allowInsecureCodingCheckbox = document.getElementById('allowInsecureCodingCheckbox');
         const allowVisionCheckbox = document.getElementById('allowVisionCheckbox');
@@ -590,6 +607,7 @@
             // Build settings from onboarding form
             const onboardingSettings = {
                 name: name,
+                model: modelSelect.value,
                 base_profile: baseProfileSelect.value,
                 allow_insecure_coding: allowInsecureCodingCheckbox.checked,
                 allow_vision: allowVisionCheckbox.checked,
