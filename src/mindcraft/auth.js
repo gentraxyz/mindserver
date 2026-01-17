@@ -134,7 +134,7 @@ export function destroyUserSession(sessionId) {
 }
 
 /**
- * Get current date as YYYY-MM-DD string
+ * Get current date as YYYY-MM-DD string in UTC
  */
 function getCurrentDate() {
     const now = new Date();

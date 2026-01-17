@@ -55,16 +55,25 @@ export function createMindServer(host_public = false, port = 8080) {
 
     // Load session secret from keys.json
     let sessionSecret = 'fallback-secret-key-change-in-production';
+    let usingFallbackSecret = false;
     try {
         const keysPath = path.join(__dirname, '..', '..', 'keys.json');
         const keys = JSON.parse(readFileSync(keysPath, 'utf8'));
         if (keys.SESSION_SECRET) {
             sessionSecret = keys.SESSION_SECRET;
         } else {
+            usingFallbackSecret = true;
             console.warn('SESSION_SECRET not found in keys.json, using fallback');
         }
     } catch (err) {
+        usingFallbackSecret = true;
         console.warn('Could not load keys.json:', err.message);
+    }
+
+    // Warn if using fallback secret in production
+    if (usingFallbackSecret && process.env.NODE_ENV === 'production') {
+        console.error('CRITICAL: Using fallback SESSION_SECRET in production! This is a security risk.');
+        console.error('Please add SESSION_SECRET to keys.json immediately.');
     }
 
     // Session middleware

@@ -457,6 +457,15 @@
         .logout-btn:hover {
             background: #5a5a5a;
         }
+        .auth-error {
+            background: #f44336;
+            color: white;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+            font-size: 0.95em;
+        }
     </style>
 </head>
 <body>
@@ -466,6 +475,7 @@
             <div class="gentra-logo">🔐</div>
             <h1 class="login-title">MindServer</h1>
             <p class="login-subtitle">Sign in with your Gentra account to continue</p>
+            <div id="authError" class="auth-error"></div>
             <button id="loginBtn" class="login-btn" onclick="window.location.href='/auth/gentra'">
                 Sign in with Gentra
             </button>
@@ -720,14 +730,18 @@
 
         // Check for authentication errors in URL
         const urlParams = new URLSearchParams(window.location.search);
+        const authErrorDiv = document.getElementById('authError');
         if (urlParams.get('error') === 'access_denied') {
-            alert('Login was cancelled. Please try again.');
+            authErrorDiv.textContent = 'Login was cancelled. Please try again.';
+            authErrorDiv.style.display = 'block';
             window.history.replaceState({}, document.title, '/');
         } else if (urlParams.get('error') === 'invalid_state') {
-            alert('Invalid state parameter. Please try again.');
+            authErrorDiv.textContent = 'Security validation failed. Please try again.';
+            authErrorDiv.style.display = 'block';
             window.history.replaceState({}, document.title, '/');
         } else if (urlParams.get('error') === 'auth_failed') {
-            alert('Authentication failed. Please try again.');
+            authErrorDiv.textContent = 'Authentication failed. Please try again.';
+            authErrorDiv.style.display = 'block';
             window.history.replaceState({}, document.title, '/');
         }
 
