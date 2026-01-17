@@ -68,12 +68,14 @@ export function createMindServer(host_public = false, port = 8080) {
     }
 
     // Session middleware
+    // Note: For production deployment with HTTPS, set cookie.secure to true
+    // This is currently set to false to allow local development without SSL
     const sessionMiddleware = session({
         secret: sessionSecret,
         resave: false,
         saveUninitialized: false,
         cookie: { 
-            secure: false, // set to true if using HTTPS
+            secure: process.env.NODE_ENV === 'production', // true in production, false in development
             httpOnly: true,
             maxAge: 24 * 60 * 60 * 1000 // 24 hours
         }

@@ -21,6 +21,13 @@ MindServer now requires users to sign in with their Gentra account. Each user is
    - `http://localhost:8080/auth/gentra/callback` (for local development)
    - `https://yourdomain.com/auth/gentra/callback` (for production)
 
+## Production Deployment
+
+For production deployment with HTTPS:
+- Set `NODE_ENV=production` environment variable to enable secure cookies
+- Ensure your application is served over HTTPS
+- Update the redirect URI in Gentra to use `https://`
+
 ## Features
 
 - **OAuth 2.0 Authentication**: Secure login using Gentra's authorization flow
