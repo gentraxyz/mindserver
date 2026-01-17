@@ -25,8 +25,15 @@ MindServer now requires users to sign in with their Gentra account. Each user is
 
 For production deployment with HTTPS:
 - Set `NODE_ENV=production` environment variable to enable secure cookies
+- Set `REDIRECT_URI=https://yourdomain.com` environment variable (without trailing slash)
 - Ensure your application is served over HTTPS
-- Update the redirect URI in Gentra to use `https://`
+- Update the redirect URI in Gentra to use `https://yourdomain.com/auth/gentra/callback`
+
+Example production environment variables:
+```bash
+NODE_ENV=production
+REDIRECT_URI=https://mindserver.example.com
+```
 
 ## Features
 

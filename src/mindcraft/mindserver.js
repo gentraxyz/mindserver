@@ -95,7 +95,10 @@ export function createMindServer(host_public = false, port = 8080) {
         const state = crypto.randomBytes(16).toString('hex');
         req.session.oauth_state = state;
         
-        const redirectUri = `http://${req.get('host')}/auth/gentra/callback`;
+        // Construct redirect URI safely - use environment variable if available, otherwise localhost
+        // For production, set REDIRECT_URI environment variable to your domain
+        const baseUrl = process.env.REDIRECT_URI || `http://localhost:${port}`;
+        const redirectUri = `${baseUrl}/auth/gentra/callback`;
         const authUrl = auth.getAuthorizationUrl(redirectUri, state);
         
         res.redirect(authUrl);

@@ -51,15 +51,27 @@ export function getAuthorizationUrl(redirectUri, state) {
  * Exchange authorization code for access token
  */
 export async function exchangeCodeForToken(code) {
-    // Validate authorization code
-    if (!code || typeof code !== 'string' || code.trim().length === 0) {
+    // Validate authorization code format and length
+    if (!code || typeof code !== 'string') {
         throw new Error('Invalid authorization code');
+    }
+    
+    const trimmedCode = code.trim();
+    
+    // Basic validation: reasonable length and alphanumeric/safe characters
+    if (trimmedCode.length === 0 || trimmedCode.length > 500) {
+        throw new Error('Invalid authorization code length');
+    }
+    
+    // Only allow alphanumeric, hyphens, underscores, and dots
+    if (!/^[a-zA-Z0-9._-]+$/.test(trimmedCode)) {
+        throw new Error('Invalid authorization code format');
     }
 
     try {
         const params = new URLSearchParams({
             grant_type: 'authorization_code',
-            code: code.trim(),
+            code: trimmedCode,
             client_id: gentraCredentials.client_id,
             client_secret: gentraCredentials.client_secret
         });

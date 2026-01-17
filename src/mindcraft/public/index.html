@@ -700,7 +700,7 @@
                 // Safely create avatar with first letter of username
                 // Use a safe alphanumeric character or default to 'U'
                 const firstChar = data.user.username.charAt(0).toUpperCase();
-                const safeLetter = /^[A-Z0-9]$/.test(firstChar) ? firstChar : 'U';
+                const safeLetter = /^[A-Za-z0-9]$/.test(firstChar) ? firstChar : 'U';
                 const svgDataUrl = 'data:image/svg+xml,' + encodeURIComponent(
                     '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40">' +
                     '<rect width="40" height="40" fill="#4CAF50"/>' +
