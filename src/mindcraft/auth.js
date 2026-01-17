@@ -22,7 +22,12 @@ const GENTRA_TOKEN_URL = 'https://gentra.xyz/GentraID/Developers/token.php';
 const GENTRA_USERINFO_URL = 'https://gentra.xyz/GentraID/Developers/userinfo.php';
 
 // In-memory storage for user sessions and task usage
-// In production, this should be moved to a database
+// WARNING: This in-memory storage is suitable for development and single-instance deployments only.
+// For production deployments with multiple server instances or for data persistence across restarts,
+// implement a proper storage solution such as:
+// - Redis for distributed session storage
+// - PostgreSQL/MySQL for persistent user and task tracking
+// - MongoDB for flexible schema storage
 const userSessions = new Map();
 const taskUsage = new Map(); // { username: { date: 'YYYY-MM-DD', count: number } }
 
