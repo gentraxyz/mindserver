@@ -41,6 +41,16 @@ The worker-based setup requires no local API keys - just deploy the worker once 
 Configure API keys locally for direct access to LLM providers. See [Install and Run](#install-and-run).
 
 # Getting Started
+
+## Authentication
+
+MindServer now requires users to sign in with their Gentra account. Each account is limited to **3 tasks per day**.
+
+To set up authentication:
+1. Register your application on the [Gentra Developer Portal](https://gentra.xyz/GentraID/Developers/)
+2. Add your `GENTRA_CLIENT_ID` and `GENTRA_CLIENT_SECRET` to `keys.json`
+3. See [GENTRA_AUTH.md](GENTRA_AUTH.md) for detailed setup instructions
+
 ## Requirements
 
 - [Minecraft Java Edition](https://www.minecraft.net/en-us/store/minecraft-java-bedrock-edition-pc) (up to v1.21.6, recommend v1.21.6)

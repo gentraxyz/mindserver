@@ -60,9 +60,11 @@ export function createMindServer(host_public = false, port = 8080) {
         const keys = JSON.parse(readFileSync(keysPath, 'utf8'));
         if (keys.SESSION_SECRET) {
             sessionSecret = keys.SESSION_SECRET;
+        } else {
+            console.warn('SESSION_SECRET not found in keys.json, using fallback');
         }
     } catch (err) {
-        console.warn('Could not load SESSION_SECRET from keys.json, using fallback');
+        console.warn('Could not load keys.json:', err.message);
     }
 
     // Session middleware
@@ -160,7 +162,6 @@ export function createMindServer(host_public = false, port = 8080) {
     });
 
     // Serve static files
-    const __dirname = path.dirname(fileURLToPath(import.meta.url));
     app.use(express.static(path.join(__dirname, 'public')));
 
     // Socket.io connection handling
