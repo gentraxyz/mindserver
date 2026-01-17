@@ -1,10 +1,13 @@
 import { Server } from 'socket.io';
 import express from 'express';
+import session from 'express-session';
 import http from 'http';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import * as mindserver from './mindcraft.js';
 import { readFileSync } from 'fs';
+import * as auth from './auth.js';
+import crypto from 'crypto';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Mindserver is:
@@ -50,6 +53,112 @@ export function createMindServer(host_public = false, port = 8080) {
     server = http.createServer(app);
     io = new Server(server);
 
+    // Load session secret from keys.json
+    let sessionSecret = 'fallback-secret-key-change-in-production';
+    try {
+        const keysPath = path.join(__dirname, '..', '..', 'keys.json');
+        const keys = JSON.parse(readFileSync(keysPath, 'utf8'));
+        if (keys.SESSION_SECRET) {
+            sessionSecret = keys.SESSION_SECRET;
+        }
+    } catch (err) {
+        console.warn('Could not load SESSION_SECRET from keys.json, using fallback');
+    }
+
+    // Session middleware
+    const sessionMiddleware = session({
+        secret: sessionSecret,
+        resave: false,
+        saveUninitialized: false,
+        cookie: { 
+            secure: false, // set to true if using HTTPS
+            httpOnly: true,
+            maxAge: 24 * 60 * 60 * 1000 // 24 hours
+        }
+    });
+
+    app.use(sessionMiddleware);
+
+    // Share session with Socket.IO
+    io.engine.use(sessionMiddleware);
+
+    // OAuth routes
+    app.get('/auth/gentra', (req, res) => {
+        if (!auth.isGentraConfigured()) {
+            return res.status(500).send('GentraID is not configured. Please add GENTRA_CLIENT_ID and GENTRA_CLIENT_SECRET to keys.json');
+        }
+
+        const state = crypto.randomBytes(16).toString('hex');
+        req.session.oauth_state = state;
+        
+        const redirectUri = `http://${req.get('host')}/auth/gentra/callback`;
+        const authUrl = auth.getAuthorizationUrl(redirectUri, state);
+        
+        res.redirect(authUrl);
+    });
+
+    app.get('/auth/gentra/callback', async (req, res) => {
+        const { code, state, error } = req.query;
+
+        // Handle user denial
+        if (error) {
+            return res.redirect('/?error=access_denied');
+        }
+
+        // Verify state to prevent CSRF
+        if (!state || state !== req.session.oauth_state) {
+            return res.redirect('/?error=invalid_state');
+        }
+
+        try {
+            // Exchange code for token
+            const tokenData = await auth.exchangeCodeForToken(code);
+            
+            // Get user info
+            const userInfo = await auth.getUserInfo(tokenData.access_token);
+            
+            // Create session
+            auth.createUserSession(req.session.id, userInfo);
+            req.session.gentraUser = userInfo;
+            req.session.isAuthenticated = true;
+            
+            console.log(`User ${userInfo.username} logged in successfully`);
+            
+            res.redirect('/');
+        } catch (err) {
+            console.error('OAuth callback error:', err);
+            res.redirect('/?error=auth_failed');
+        }
+    });
+
+    app.get('/auth/logout', (req, res) => {
+        if (req.session.id) {
+            auth.destroyUserSession(req.session.id);
+        }
+        req.session.destroy((err) => {
+            if (err) {
+                console.error('Error destroying session:', err);
+            }
+            res.redirect('/');
+        });
+    });
+
+    app.get('/api/user', (req, res) => {
+        if (req.session.isAuthenticated && req.session.gentraUser) {
+            const remainingTasks = auth.getRemainingTasks(req.session.gentraUser.username);
+            const tasksUsed = auth.getTasksUsedToday(req.session.gentraUser.username);
+            res.json({
+                authenticated: true,
+                user: req.session.gentraUser,
+                remainingTasks,
+                tasksUsed,
+                maxTasks: 3
+            });
+        } else {
+            res.json({ authenticated: false });
+        }
+    });
+
     // Serve static files
     const __dirname = path.dirname(fileURLToPath(import.meta.url));
     app.use(express.static(path.join(__dirname, 'public')));
@@ -59,9 +168,35 @@ export function createMindServer(host_public = false, port = 8080) {
         let curAgentName = null;
         console.log('Client connected');
 
+        // Get session from socket
+        const session = socket.request.session;
+
+        // Helper to check authentication
+        const isAuthenticated = () => {
+            return session && session.isAuthenticated && session.gentraUser;
+        };
+
+        // Helper to check task limits
+        const canCreateTask = () => {
+            if (!isAuthenticated()) return false;
+            return auth.hasTasksRemaining(session.gentraUser.username);
+        };
+
         agentsStatusUpdate(socket);
 
         socket.on('create-agent', async (settings, callback) => {
+            // Check authentication
+            if (!isAuthenticated()) {
+                callback({ success: false, error: 'You must be logged in to create an agent' });
+                return;
+            }
+
+            // Check task limits
+            if (!canCreateTask()) {
+                callback({ success: false, error: 'You have reached your daily task limit (3 tasks per day)' });
+                return;
+            }
+
             console.log('API create agent...');
             for (let key in settings_spec) {
                 if (!(key in settings)) {
@@ -84,6 +219,10 @@ export function createMindServer(host_public = false, port = 8080) {
                     callback({ success: false, error: 'Agent already exists' });
                     return;
                 }
+                
+                // Increment task usage
+                auth.incrementTaskUsage(session.gentraUser.username);
+                
                 let returned = await mindserver.createAgent(settings);
                 callback({ success: returned.success, error: returned.error });
                 let name = settings.profile.name;
@@ -100,6 +239,18 @@ export function createMindServer(host_public = false, port = 8080) {
         });
 
         socket.on('complete-onboarding', async (onboardingSettings, callback) => {
+            // Check authentication
+            if (!isAuthenticated()) {
+                callback({ success: false, error: 'You must be logged in to create an agent' });
+                return;
+            }
+
+            // Check task limits
+            if (!canCreateTask()) {
+                callback({ success: false, error: 'You have reached your daily task limit (3 tasks per day)' });
+                return;
+            }
+
             console.log('Completing onboarding with settings:', onboardingSettings);
             console.log('DEBUG: Model field in onboarding:', onboardingSettings.model);
             
@@ -167,6 +318,9 @@ export function createMindServer(host_public = false, port = 8080) {
                     callback({ success: false, error: 'Agent already exists' });
                     return;
                 }
+
+                // Increment task usage
+                auth.incrementTaskUsage(session.gentraUser.username);
 
                 // Create the agent
                 let returned = await mindserver.createAgent(settings);

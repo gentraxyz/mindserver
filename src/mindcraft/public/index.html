@@ -365,9 +365,113 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        .login-card {
+            background: #2d2d2d;
+            border-radius: 12px;
+            padding: 50px;
+            max-width: 450px;
+            width: 90%;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+        .login-title {
+            font-size: 2.2em;
+            font-weight: 600;
+            color: #4CAF50;
+            margin-bottom: 16px;
+        }
+        .login-subtitle {
+            color: #aaa;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+        .login-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(76, 175, 80, 0.4);
+        }
+        .gentra-logo {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #3a3a3a;
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid #4CAF50;
+        }
+        .user-info {
+            flex: 1;
+            text-align: left;
+        }
+        .user-name {
+            font-weight: 600;
+            color: #e0e0e0;
+            font-size: 0.95em;
+        }
+        .user-tasks {
+            font-size: 0.85em;
+            color: #aaa;
+        }
+        .logout-btn {
+            padding: 6px 12px;
+            background: #505050;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+        .logout-btn:hover {
+            background: #5a5a5a;
+        }
     </style>
 </head>
 <body>
+    <!-- Login Overlay -->
+    <div id="loginOverlay" class="login-overlay">
+        <div class="login-card">
+            <div class="gentra-logo">🔐</div>
+            <h1 class="login-title">MindServer</h1>
+            <p class="login-subtitle">Sign in with your Gentra account to continue</p>
+            <button id="loginBtn" class="login-btn" onclick="window.location.href='/auth/gentra'">
+                Sign in with Gentra
+            </button>
+        </div>
+    </div>
+
     <!-- Onboarding Overlay -->
     <div id="onboardingOverlay" class="onboarding-overlay">
         <div class="onboarding-card">
@@ -451,7 +555,17 @@
 
     <div class="header">
         <h1>MindServer Agent</h1>
-        <span id="statusBadge" class="status-badge offline">Disconnected</span>
+        <div style="display: flex; align-items: center; gap: 16px;">
+            <div id="userProfile" class="user-profile" style="display: none;">
+                <img id="userAvatar" class="user-avatar" src="" alt="Profile">
+                <div class="user-info">
+                    <div class="user-name" id="userName"></div>
+                    <div class="user-tasks" id="userTasks"></div>
+                </div>
+                <button id="logoutBtn" class="logout-btn">Logout</button>
+            </div>
+            <span id="statusBadge" class="status-badge offline">Disconnected</span>
+        </div>
     </div>
 
     <div class="main-content">
@@ -536,6 +650,78 @@
         let agentSettings = null;
         let viewerPort = null;
         let hasCheckedForAgent = false;
+        let currentUser = null;
+        let isAuthenticated = false;
+
+        // Login functionality
+        const loginOverlay = document.getElementById('loginOverlay');
+        const userProfile = document.getElementById('userProfile');
+        const userAvatar = document.getElementById('userAvatar');
+        const userName = document.getElementById('userName');
+        const userTasks = document.getElementById('userTasks');
+        const logoutBtn = document.getElementById('logoutBtn');
+
+        // Check authentication on page load
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/user');
+                const data = await response.json();
+                
+                if (data.authenticated) {
+                    isAuthenticated = true;
+                    currentUser = data.user;
+                    showUserProfile(data);
+                    hideLogin();
+                } else {
+                    isAuthenticated = false;
+                    showLogin();
+                }
+            } catch (err) {
+                console.error('Error checking authentication:', err);
+                showLogin();
+            }
+        }
+
+        function showLogin() {
+            loginOverlay.style.display = 'flex';
+        }
+
+        function hideLogin() {
+            loginOverlay.style.display = 'none';
+        }
+
+        function showUserProfile(data) {
+            userName.textContent = data.user.display_name;
+            userTasks.textContent = `Tasks: ${data.tasksUsed}/${data.maxTasks} used today (${data.remainingTasks} remaining)`;
+            
+            if (data.user.profile_image_url) {
+                userAvatar.src = data.user.profile_image_url;
+            } else {
+                userAvatar.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" fill="%234CAF50"/><text x="20" y="25" font-size="20" text-anchor="middle" fill="white">' + data.user.username.charAt(0).toUpperCase() + '</text></svg>';
+            }
+            
+            userProfile.style.display = 'flex';
+        }
+
+        logoutBtn.addEventListener('click', () => {
+            window.location.href = '/auth/logout';
+        });
+
+        // Check for authentication errors in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('error') === 'access_denied') {
+            alert('Login was cancelled. Please try again.');
+            window.history.replaceState({}, document.title, '/');
+        } else if (urlParams.get('error') === 'invalid_state') {
+            alert('Invalid state parameter. Please try again.');
+            window.history.replaceState({}, document.title, '/');
+        } else if (urlParams.get('error') === 'auth_failed') {
+            alert('Authentication failed. Please try again.');
+            window.history.replaceState({}, document.title, '/');
+        }
+
+        // Initialize authentication check
+        checkAuth();
 
         // Onboarding functionality
         const onboardingOverlay = document.getElementById('onboardingOverlay');
@@ -668,6 +854,11 @@
 
         socket.on('agents-status', (agents) => {
             hasCheckedForAgent = true;
+            
+            // Don't show onboarding if not authenticated
+            if (!isAuthenticated) {
+                return;
+            }
             
             if (agents.length === 0) {
                 // No agents exist, show onboarding
