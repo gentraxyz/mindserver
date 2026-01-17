@@ -46,10 +46,15 @@ export function getAuthorizationUrl(redirectUri, state) {
  * Exchange authorization code for access token
  */
 export async function exchangeCodeForToken(code) {
+    // Validate authorization code
+    if (!code || typeof code !== 'string' || code.trim().length === 0) {
+        throw new Error('Invalid authorization code');
+    }
+
     try {
         const params = new URLSearchParams({
             grant_type: 'authorization_code',
-            code: code,
+            code: code.trim(),
             client_id: gentraCredentials.client_id,
             client_secret: gentraCredentials.client_secret
         });

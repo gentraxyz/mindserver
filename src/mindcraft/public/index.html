@@ -697,7 +697,17 @@
             if (data.user.profile_image_url) {
                 userAvatar.src = data.user.profile_image_url;
             } else {
-                userAvatar.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" fill="%234CAF50"/><text x="20" y="25" font-size="20" text-anchor="middle" fill="white">' + data.user.username.charAt(0).toUpperCase() + '</text></svg>';
+                // Safely escape the username for use in SVG data URL
+                const firstLetter = data.user.username.charAt(0).toUpperCase();
+                const escapedLetter = firstLetter.replace(/[<>"'&]/g, '');
+                const svgDataUrl = 'data:image/svg+xml,' + encodeURIComponent(
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40">' +
+                    '<rect width="40" height="40" fill="#4CAF50"/>' +
+                    '<text x="20" y="25" font-size="20" text-anchor="middle" fill="white">' + 
+                    escapedLetter + 
+                    '</text></svg>'
+                );
+                userAvatar.src = svgDataUrl;
             }
             
             userProfile.style.display = 'flex';
