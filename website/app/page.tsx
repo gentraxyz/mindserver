@@ -14,7 +14,7 @@ export default function Home() {
           MindServer
         </h1>
         <p className="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto animate-fade-in">
-          Unlock the full potential of your AI agents. Securely link your preferred provider to get started.
+          Unlock the full potential of your AI agents. Generate a free access key to get started.
         </p>
       </div>
 
