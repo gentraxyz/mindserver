@@ -87,7 +87,19 @@ async function handleChatCompletion(request, env) {
       });
     }
 
-    const apiKey = validApiKey;
+    let apiKey = validApiKey;
+
+    // Managed Access Logic:
+    // If provider_key is 'internal', we use the Worker's environment variables.
+    if (apiKey === 'internal') {
+      if (provider === 'openrouter') {
+        apiKey = env.OPENROUTER_API_KEY;
+        if (!apiKey) throw new Error('OPENROUTER_API_KEY not configured in worker');
+      } else if (provider === 'cerebras') {
+        apiKey = env.CEREBRAS_API_KEY;
+        if (!apiKey) throw new Error('CEREBRAS_API_KEY not configured in worker');
+      }
+    }
 
     // Prepare request payload
     const requestPayload = {
@@ -110,6 +122,8 @@ async function handleChatCompletion(request, env) {
     if (provider === 'openrouter') {
       headers['HTTP-Referer'] = 'https://mindcraft.ai';
       headers['X-Title'] = 'Mindcraft';
+    } else if (provider === 'cerebras') {
+      // Cerebras might need specific headers if any
     }
 
     const response = await fetch(url, {
@@ -172,7 +186,18 @@ async function handleEmbedding(request, env) {
     });
   }
 
-  const apiKey = keyData.provider_key;
+  let apiKey = keyData.provider_key;
+  if (apiKey === 'internal') {
+    apiKey = env.OPENROUTER_API_KEY;
+    if (!apiKey) {
+      return new Response(JSON.stringify({
+        error: 'OPENROUTER_API_KEY not configured in worker'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+  }
 
   try {
     const body = await request.json();
@@ -280,14 +305,10 @@ export default {
 async function handleRegisterKey(request, env) {
   try {
     const body = await request.json();
-    const { provider, provider_key } = body;
-
-    if (!provider || !provider_key) {
-      return new Response(JSON.stringify({ error: 'provider and provider_key are required' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    // Optional: User can specify provider preference, default to 'openrouter' (or 'managed' which implies a default)
+    // We strictly use 'managed' model now generally, but let's keep 'provider' field to track "intended" usage or future expansion.
+    const provider = body.provider || 'openrouter';
+    const provider_key = 'internal'; // Always set to internal for managed access
 
     if (!['openrouter', 'cerebras'].includes(provider)) {
       return new Response(JSON.stringify({ error: 'Invalid provider. Must be openrouter or cerebras' }), {
@@ -312,7 +333,7 @@ async function handleRegisterKey(request, env) {
 
     return new Response(JSON.stringify({
       key: newKey,
-      message: 'Key registered successfully'
+      message: 'Access Key registered successfully'
     }), {
       status: 201,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

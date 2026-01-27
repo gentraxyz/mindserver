@@ -3,14 +3,14 @@
 import { useState } from 'react';
 
 export default function KeyRegistration() {
+    // ... (imports)
     const [provider, setProvider] = useState('openrouter');
-    const [apiKey, setApiKey] = useState('');
     const [generatedKey, setGeneratedKey] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [copied, setCopied] = useState(false);
 
-    const WORKER_URL = 'https://mindserver-worker.webmaster-e1c.workers.dev'; // Replace with your actual worker URL if different
+    const WORKER_URL = 'https://mindserver-worker.webmaster-e1c.workers.dev';
 
     const handleRegister = async () => {
         setLoading(true);
@@ -25,7 +25,7 @@ export default function KeyRegistration() {
                 },
                 body: JSON.stringify({
                     provider,
-                    provider_key: apiKey,
+                    // No provider_key needed for managed access
                 }),
             });
 
@@ -55,8 +55,8 @@ export default function KeyRegistration() {
                 <button
                     onClick={() => setProvider('openrouter')}
                     className={`flex-1 py-2 px-4 rounded-lg transition-all duration-300 ${provider === 'openrouter'
-                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
-                            : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
+                        : 'bg-white/5 text-gray-400 hover:bg-white/10'
                         }`}
                 >
                     OpenRouter
@@ -64,8 +64,8 @@ export default function KeyRegistration() {
                 <button
                     onClick={() => setProvider('cerebras')}
                     className={`flex-1 py-2 px-4 rounded-lg transition-all duration-300 ${provider === 'cerebras'
-                            ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/30'
-                            : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                        ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/30'
+                        : 'bg-white/5 text-gray-400 hover:bg-white/10'
                         }`}
                 >
                     Cerebras
@@ -73,22 +73,15 @@ export default function KeyRegistration() {
             </div>
 
             <div className="space-y-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">
-                        {provider === 'openrouter' ? 'OpenRouter Key' : 'Cerebras Key'}
-                    </label>
-                    <input
-                        type="password"
-                        value={apiKey}
-                        onChange={(e) => setApiKey(e.target.value)}
-                        placeholder="sk-..."
-                        className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                    />
+                <div className="text-center mb-4">
+                    <p className="text-gray-400 text-sm">
+                        Generate a secure access key to connect your MindServer agent.
+                    </p>
                 </div>
 
                 <button
                     onClick={handleRegister}
-                    disabled={!apiKey || loading}
+                    disabled={loading}
                     className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold py-3 px-6 rounded-lg shadow-lg shadow-blue-600/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02]"
                 >
                     {loading ? (
@@ -100,7 +93,7 @@ export default function KeyRegistration() {
                             Generating...
                         </span>
                     ) : (
-                        'Generate MindServer Key'
+                        'Generate Access Key'
                     )}
                 </button>
 
@@ -113,7 +106,7 @@ export default function KeyRegistration() {
                 {generatedKey && (
                     <div className="mt-6 pt-6 border-t border-white/10 animate-fade-in">
                         <label className="block text-sm font-medium text-green-400 mb-2">
-                            Your MindServer Key
+                            Your MindServer Access Key
                         </label>
                         <div className="relative group">
                             <input
