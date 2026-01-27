@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS user_keys (
+    id TEXT PRIMARY KEY,
+    provider TEXT NOT NULL,
+    provider_key TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

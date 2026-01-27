@@ -31,11 +31,11 @@ function getProviderConfig(model) {
 async function handleChatCompletion(request, env) {
   try {
     const body = await request.json();
-    
+
     // Validate required fields
     if (!body.messages || !Array.isArray(body.messages)) {
-      return new Response(JSON.stringify({ 
-        error: 'messages array is required' 
+      return new Response(JSON.stringify({
+        error: 'messages array is required'
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -44,29 +44,50 @@ async function handleChatCompletion(request, env) {
 
     const model = body.model || 'openai/gpt-4o-mini';
     const { provider, url } = getProviderConfig(model);
-    
-    let apiKey;
-    if (provider === 'cerebras') {
-      apiKey = env.CEREBRAS_API_KEY;
-      if (!apiKey) {
-        return new Response(JSON.stringify({ 
-          error: 'CEREBRAS_API_KEY not configured in worker' 
-        }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-    } else {
-      apiKey = env.OPENROUTER_API_KEY;
-      if (!apiKey) {
-        return new Response(JSON.stringify({ 
-          error: 'OPENROUTER_API_KEY not configured in worker' 
-        }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
+
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({
+        error: 'Missing Authorization header'
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
+
+    const userKey = authHeader.split(' ')[1];
+    const keyData = await getProviderKey(userKey, env);
+
+    if (!keyData) {
+      return new Response(JSON.stringify({
+        error: 'Invalid API Key'
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const { provider: keyProvider, provider_key: validApiKey } = keyData;
+
+    // Enforce provider match if needed, or allow cross-provider usage if that's the intent.
+    // For now, let's assume the key dictates the provider usage or we fallback/override.
+    // If the User Key is for OpenRouter, but they requested Cerebras model... what happens?
+    // STRICT MODE: The user key registered provider MUST match the requested model provider?
+    // OR: We just use the key they have?
+
+    // Simplification: We trust the keyData.provider.
+    // If request implies Cerebras but key is OpenRouter -> Mismatch.
+
+    if (provider !== keyProvider) {
+      return new Response(JSON.stringify({
+        error: `Provider mismatch. You are trying to use ${provider} but your key is for ${keyProvider}`
+      }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const apiKey = validApiKey;
 
     // Prepare request payload
     const requestPayload = {
@@ -74,7 +95,7 @@ async function handleChatCompletion(request, env) {
       model,
       messages: body.messages,
     };
-    
+
     // Add optional parameters if provided
     if (body.stop !== undefined) requestPayload.stop = body.stop;
     if (body.max_tokens !== undefined) requestPayload.max_tokens = body.max_tokens;
@@ -85,7 +106,7 @@ async function handleChatCompletion(request, env) {
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     };
-    
+
     if (provider === 'openrouter') {
       headers['HTTP-Referer'] = 'https://mindcraft.ai';
       headers['X-Title'] = 'Mindcraft';
@@ -100,7 +121,7 @@ async function handleChatCompletion(request, env) {
     const responseData = await response.json();
 
     if (!response.ok) {
-      return new Response(JSON.stringify({ 
+      return new Response(JSON.stringify({
         error: responseData.error || `${provider} request failed`,
         details: responseData
       }), {
@@ -114,9 +135,9 @@ async function handleChatCompletion(request, env) {
     });
 
   } catch (error) {
-    return new Response(JSON.stringify({ 
+    return new Response(JSON.stringify({
       error: 'Failed to process request',
-      details: error.message 
+      details: error.message
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -128,23 +149,37 @@ async function handleChatCompletion(request, env) {
  * Handle embedding requests
  */
 async function handleEmbedding(request, env) {
-  const apiKey = env.OPENROUTER_API_KEY;
-  
-  if (!apiKey) {
-    return new Response(JSON.stringify({ 
-      error: 'OPENROUTER_API_KEY not configured in worker' 
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return new Response(JSON.stringify({
+      error: 'Missing Authorization header'
     }), {
-      status: 500,
+      status: 401,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 
+  const userKey = authHeader.split(' ')[1];
+  const keyData = await getProviderKey(userKey, env);
+
+  if (!keyData || keyData.provider !== 'openrouter') {
+    // Embedding only supported on OpenRouter
+    return new Response(JSON.stringify({
+      error: 'Invalid API Key or provider does not support embeddings (requires OpenRouter)'
+    }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  const apiKey = keyData.provider_key;
+
   try {
     const body = await request.json();
-    
+
     if (!body.input) {
-      return new Response(JSON.stringify({ 
-        error: 'input is required' 
+      return new Response(JSON.stringify({
+        error: 'input is required'
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -169,7 +204,7 @@ async function handleEmbedding(request, env) {
     const responseData = await embeddingResponse.json();
 
     if (!embeddingResponse.ok) {
-      return new Response(JSON.stringify({ 
+      return new Response(JSON.stringify({
         error: responseData.error || 'Embedding request failed',
         details: responseData
       }), {
@@ -183,9 +218,9 @@ async function handleEmbedding(request, env) {
     });
 
   } catch (error) {
-    return new Response(JSON.stringify({ 
+    return new Response(JSON.stringify({
       error: 'Failed to process embedding request',
-      details: error.message 
+      details: error.message
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -197,7 +232,7 @@ async function handleEmbedding(request, env) {
  * Health check endpoint
  */
 function handleHealth() {
-  return new Response(JSON.stringify({ 
+  return new Response(JSON.stringify({
     status: 'ok',
     service: 'mindserver-worker'
   }), {
@@ -216,6 +251,10 @@ export default {
     const path = url.pathname;
 
     // Route requests
+    if (path === '/keys/register' && request.method === 'POST') {
+      return handleRegisterKey(request, env);
+    }
+
     if (path === '/v1/chat/completions' && request.method === 'POST') {
       return handleChatCompletion(request, env);
     }
@@ -234,3 +273,72 @@ export default {
     });
   },
 };
+
+/**
+ * Handle new key registration
+ */
+async function handleRegisterKey(request, env) {
+  try {
+    const body = await request.json();
+    const { provider, provider_key } = body;
+
+    if (!provider || !provider_key) {
+      return new Response(JSON.stringify({ error: 'provider and provider_key are required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!['openrouter', 'cerebras'].includes(provider)) {
+      return new Response(JSON.stringify({ error: 'Invalid provider. Must be openrouter or cerebras' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Generate a new unique key for the user
+    // Simple UUID-like generation for now
+    const newKey = 'sk-' + crypto.randomUUID();
+
+    const result = await env.DB.prepare(
+      'INSERT INTO user_keys (id, provider, provider_key) VALUES (?, ?, ?)'
+    )
+      .bind(newKey, provider, provider_key)
+      .run();
+
+    if (!result.success) {
+      throw new Error('Failed to insert into database');
+    }
+
+    return new Response(JSON.stringify({
+      key: newKey,
+      message: 'Key registered successfully'
+    }), {
+      status: 201,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
+  } catch (error) {
+    return new Response(JSON.stringify({
+      error: 'Failed to register key',
+      details: error.message
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+}
+
+async function getProviderKey(userKey, env) {
+  if (!userKey || !userKey.startsWith('sk-')) {
+    return null; // Invalid format
+  }
+
+  const result = await env.DB.prepare(
+    'SELECT provider, provider_key FROM user_keys WHERE id = ?'
+  )
+    .bind(userKey)
+    .first();
+
+  return result; // Returns { provider, provider_key } or null
+}

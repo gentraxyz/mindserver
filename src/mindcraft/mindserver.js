@@ -102,20 +102,20 @@ export function createMindServer(host_public = false, port = 8080) {
         socket.on('complete-onboarding', async (onboardingSettings, callback) => {
             console.log('Completing onboarding with settings:', onboardingSettings);
             console.log('DEBUG: Model field in onboarding:', onboardingSettings.model);
-            
+
             try {
                 // Get default settings from global (set in main.js)
                 const defaultSettings = global.defaultSettings || {};
-                
+
                 // Fetch settings spec
                 const settingsSpec = settings_spec;
-                
+
                 // Build complete settings object starting with defaults
                 const settings = {};
                 Object.keys(settingsSpec).forEach(key => {
                     if (key !== 'profile') {
-                        settings[key] = defaultSettings[key] !== undefined 
-                            ? defaultSettings[key] 
+                        settings[key] = defaultSettings[key] !== undefined
+                            ? defaultSettings[key]
                             : settingsSpec[key].default;
                     }
                 });
@@ -150,7 +150,7 @@ export function createMindServer(host_public = false, port = 8080) {
                 }
 
                 // Apply onboarding customizations
-                settings.profile = { 
+                settings.profile = {
                     ...modelConfig,   // Get model configuration from selected model or first profile
                     ...baseProfile,   // Merge base profile properties (modes, prompts, etc.)
                     name: onboardingSettings.name  // Override name with onboarding selection
@@ -159,6 +159,13 @@ export function createMindServer(host_public = false, port = 8080) {
                 settings.allow_insecure_coding = onboardingSettings.allow_insecure_coding || false;
                 settings.allow_vision = onboardingSettings.allow_vision || false;
                 settings.render_bot_view = onboardingSettings.render_bot_view || false;
+
+                // Handle Worker API Key
+                if (onboardingSettings.worker_api_key) {
+                    settings.worker_api_key = onboardingSettings.worker_api_key;
+                    // Also propagate to process env logic if needed, but mainly it stays in settings for the model to pick up
+                    console.log('DEBUG: Set worker_api_key from onboarding');
+                }
 
                 console.log(`Profile for ${settings.profile.name}:`, settings.profile);
 
@@ -170,14 +177,14 @@ export function createMindServer(host_public = false, port = 8080) {
 
                 // Create the agent
                 let returned = await mindserver.createAgent(settings);
-                
+
                 if (returned.success) {
                     console.log(`Agent ${settings.profile.name} created successfully via onboarding`);
                     callback({ success: true });
                 } else {
                     console.error(`Failed to create agent: ${returned.error}`);
                     callback({ success: false, error: returned.error });
-                    
+
                     // Cleanup if creation failed
                     let name = settings.profile.name;
                     if (agent_connections[name]) {
@@ -185,7 +192,7 @@ export function createMindServer(host_public = false, port = 8080) {
                         delete agent_connections[name];
                     }
                 }
-                
+
                 agentsStatusUpdate();
             } catch (error) {
                 console.error('Error in onboarding:', error);
@@ -287,20 +294,20 @@ export function createMindServer(host_public = false, port = 8080) {
                 console.log('Exiting MindServer');
                 process.exit(0);
             }, 2000);
-            
+
         });
 
-		socket.on('send-message', (agentName, data) => {
-			if (!agent_connections[agentName]) {
-				console.warn(`Agent ${agentName} not in game, cannot send message via MindServer.`);
-				return
-			}
-			try {
-				agent_connections[agentName].socket.emit('send-message', data)
-			} catch (error) {
-				console.error('Error: ', error);
-			}
-		});
+        socket.on('send-message', (agentName, data) => {
+            if (!agent_connections[agentName]) {
+                console.warn(`Agent ${agentName} not in game, cannot send message via MindServer.`);
+                return
+            }
+            try {
+                agent_connections[agentName].socket.emit('send-message', data)
+            } catch (error) {
+                console.error('Error: ', error);
+            }
+        });
 
         socket.on('bot-output', (agentName, message) => {
             io.emit('bot-output', agentName, message);
@@ -327,7 +334,7 @@ function agentsStatusUpdate(socket) {
     for (let agentName in agent_connections) {
         const conn = agent_connections[agentName];
         agents.push({
-            name: agentName, 
+            name: agentName,
             in_game: conn.in_game,
             viewerPort: conn.viewer_port,
             socket_connected: !!conn.socket

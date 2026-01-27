@@ -40,6 +40,7 @@ export class WorkerModel {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${rootSettings.worker_api_key || ''}`
                     },
                     body: JSON.stringify(requestBody),
                 });
@@ -121,6 +122,7 @@ export class WorkerModel {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${rootSettings.worker_api_key || ''}`
                     },
                     body: JSON.stringify(requestBody),
                 });
@@ -171,6 +173,7 @@ export class WorkerModel {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${rootSettings.worker_api_key || ''}`
                 },
                 body: JSON.stringify({
                     model: 'openai/text-embedding-3-small',
