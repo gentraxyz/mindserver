@@ -160,6 +160,10 @@ export function createMindServer(host_public = false, port = 8080) {
                 settings.allow_vision = onboardingSettings.allow_vision || false;
                 settings.render_bot_view = onboardingSettings.render_bot_view || false;
 
+                if (onboardingSettings.port !== undefined) {
+                    settings.port = parseInt(onboardingSettings.port);
+                }
+
                 // Handle Worker API Key
                 if (onboardingSettings.worker_api_key) {
                     settings.worker_api_key = onboardingSettings.worker_api_key;
