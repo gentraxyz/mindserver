@@ -1,6 +1,4 @@
 {
     "name": "andy",
-
-    "model": "worker/mistralai/devstral-2512:free"
-
+    "model": "worker/mistralai/mistral-small-3.1-24b-instruct:free"
 }

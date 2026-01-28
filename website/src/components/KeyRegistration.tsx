@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 export default function KeyRegistration() {
     // ... (imports)
-    const [provider, setProvider] = useState('openrouter');
+    const [provider] = useState('all');
     const [generatedKey, setGeneratedKey] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -51,26 +51,6 @@ export default function KeyRegistration() {
 
     return (
         <div className="w-full max-w-md bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl animate-fade-in-up">
-            <div className="flex gap-4 mb-6">
-                <button
-                    onClick={() => setProvider('openrouter')}
-                    className={`flex-1 py-2 px-4 rounded-lg transition-all duration-300 ${provider === 'openrouter'
-                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
-                        : 'bg-white/5 text-gray-400 hover:bg-white/10'
-                        }`}
-                >
-                    OpenRouter
-                </button>
-                <button
-                    onClick={() => setProvider('cerebras')}
-                    className={`flex-1 py-2 px-4 rounded-lg transition-all duration-300 ${provider === 'cerebras'
-                        ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/30'
-                        : 'bg-white/5 text-gray-400 hover:bg-white/10'
-                        }`}
-                >
-                    Cerebras
-                </button>
-            </div>
 
             <div className="space-y-4">
                 <div className="text-center mb-4">

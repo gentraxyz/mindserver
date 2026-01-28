@@ -8,15 +8,20 @@
 
 import { strictFormat } from '../utils/text.js';
 import rootSettings from '../../settings.js';
+import agentSettings from '../agent/settings.js';
 
 export class WorkerModel {
     static prefix = 'worker';
 
     constructor(model_name, url) {
         this.model_name = model_name || 'openai/gpt-4o-mini';
-        // Priority: constructor url > settings.worker_url > env var > localhost
-        this.url = url || rootSettings.worker_url || process.env.WORKER_URL || 'http://localhost:8787';
-        console.log(`[WorkerModel] Using URL: ${this.url} (from: url=${url}, settings=${rootSettings.worker_url}, env=${process.env.WORKER_URL})`);
+        // Priority: constructor url > agentSettings.worker_url > rootSettings.worker_url > env var > localhost
+        this.url = url || agentSettings.worker_url || rootSettings.worker_url || process.env.WORKER_URL || 'http://localhost:8787';
+        console.log(`[WorkerModel] Using URL: ${this.url}`);
+    }
+
+    getApiKey() {
+        return agentSettings.worker_api_key || rootSettings.worker_api_key || '';
     }
 
     async sendRequest(turns, systemMessage, stop_seq = '*') {
@@ -40,7 +45,7 @@ export class WorkerModel {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${rootSettings.worker_api_key || ''}`
+                        'Authorization': `Bearer ${this.getApiKey()}`
                     },
                     body: JSON.stringify(requestBody),
                 });
@@ -122,7 +127,7 @@ export class WorkerModel {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${rootSettings.worker_api_key || ''}`
+                        'Authorization': `Bearer ${this.getApiKey()}`
                     },
                     body: JSON.stringify(requestBody),
                 });
@@ -173,7 +178,7 @@ export class WorkerModel {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${rootSettings.worker_api_key || ''}`
+                    'Authorization': `Bearer ${this.getApiKey()}`
                 },
                 body: JSON.stringify({
                     model: 'openai/text-embedding-3-small',

@@ -46,7 +46,7 @@ async function handleChatCompletion(request, env) {
     const { provider, url } = getProviderConfig(model);
 
     const authHeader = request.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!authHeader || !authHeader.toLowerCase().startsWith('bearer')) {
       return new Response(JSON.stringify({
         error: 'Missing Authorization header'
       }), {
@@ -55,7 +55,15 @@ async function handleChatCompletion(request, env) {
       });
     }
 
-    const userKey = authHeader.split(' ')[1];
+    const userKey = authHeader.replace(/^Bearer\s+/i, '');
+    if (!userKey) {
+      return new Response(JSON.stringify({
+        error: 'Invalid API Key'
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     const keyData = await getProviderKey(userKey, env);
 
     if (!keyData) {
@@ -69,16 +77,10 @@ async function handleChatCompletion(request, env) {
 
     const { provider: keyProvider, provider_key: validApiKey } = keyData;
 
-    // Enforce provider match if needed, or allow cross-provider usage if that's the intent.
-    // For now, let's assume the key dictates the provider usage or we fallback/override.
-    // If the User Key is for OpenRouter, but they requested Cerebras model... what happens?
-    // STRICT MODE: The user key registered provider MUST match the requested model provider?
-    // OR: We just use the key they have?
+    // A key is universal if its provider is 'all' OR it's a managed 'internal' key.
+    const isUniversalKey = keyProvider === 'all' || validApiKey === 'internal';
 
-    // Simplification: We trust the keyData.provider.
-    // If request implies Cerebras but key is OpenRouter -> Mismatch.
-
-    if (provider !== keyProvider) {
+    if (!isUniversalKey && provider !== keyProvider) {
       return new Response(JSON.stringify({
         error: `Provider mismatch. You are trying to use ${provider} but your key is for ${keyProvider}`
       }), {
@@ -164,7 +166,7 @@ async function handleChatCompletion(request, env) {
  */
 async function handleEmbedding(request, env) {
   const authHeader = request.headers.get('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!authHeader || !authHeader.toLowerCase().startsWith('bearer')) {
     return new Response(JSON.stringify({
       error: 'Missing Authorization header'
     }), {
@@ -173,10 +175,19 @@ async function handleEmbedding(request, env) {
     });
   }
 
-  const userKey = authHeader.split(' ')[1];
+  const userKey = authHeader.replace(/^Bearer\s+/i, '');
+  if (!userKey) {
+    return new Response(JSON.stringify({
+      error: 'Invalid API Key'
+    }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
   const keyData = await getProviderKey(userKey, env);
 
-  if (!keyData || keyData.provider !== 'openrouter') {
+  const isUniversalKey = keyData.provider === 'all' || keyData.provider_key === 'internal';
+  if (!keyData || (!isUniversalKey && keyData.provider !== 'openrouter')) {
     // Embedding only supported on OpenRouter
     return new Response(JSON.stringify({
       error: 'Invalid API Key or provider does not support embeddings (requires OpenRouter)'
@@ -305,13 +316,11 @@ export default {
 async function handleRegisterKey(request, env) {
   try {
     const body = await request.json();
-    // Optional: User can specify provider preference, default to 'openrouter' (or 'managed' which implies a default)
-    // We strictly use 'managed' model now generally, but let's keep 'provider' field to track "intended" usage or future expansion.
-    const provider = body.provider || 'openrouter';
+    const provider = body.provider || 'all';
     const provider_key = 'internal'; // Always set to internal for managed access
 
-    if (!['openrouter', 'cerebras'].includes(provider)) {
-      return new Response(JSON.stringify({ error: 'Invalid provider. Must be openrouter or cerebras' }), {
+    if (!['openrouter', 'cerebras', 'all'].includes(provider)) {
+      return new Response(JSON.stringify({ error: 'Invalid provider. Must be openrouter, cerebras or all' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });

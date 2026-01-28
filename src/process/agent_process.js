@@ -8,7 +8,7 @@ export class AgentProcess {
         this.worker_url = null;
     }
 
-    start(load_memory=false, init_message=null, count_id=0, worker_url=null) {
+    start(load_memory = false, init_message = null, count_id = 0, worker_url = null) {
         this.count_id = count_id;
         this.running = true;
 
@@ -36,13 +36,13 @@ export class AgentProcess {
             stderr: 'inherit',
             env: env
         });
-        
+
         let last_restart = Date.now();
         agentProcess.on('exit', (code, signal) => {
             console.log(`Agent process exited with code ${code} and signal ${signal}`);
             this.running = false;
             logoutAgent(this.name);
-            
+
             if (code > 1) {
                 console.log(`Ending task`);
                 process.exit(code);
@@ -59,7 +59,7 @@ export class AgentProcess {
                 last_restart = Date.now();
             }
         });
-    
+
         agentProcess.on('error', (err) => {
             console.error('Agent process error:', err);
         });
@@ -75,19 +75,19 @@ export class AgentProcess {
     forceRestart() {
         if (this.running && this.process && !this.process.killed) {
             console.log(`Agent process for ${this.name} is still running. Attempting to force restart.`);
-            
+
             const restartTimeout = setTimeout(() => {
                 console.warn(`Agent ${this.name} did not stop in time. It might be stuck.`);
             }, 5000); // 5 seconds to exit
 
             this.process.once('exit', () => {
-                 clearTimeout(restartTimeout);
-                 console.log(`Stopped hanging agent ${this.name}. Now restarting.`);
-                 this.start(true, 'Agent process restarted.', this.count_id, this.worker_url);
+                clearTimeout(restartTimeout);
+                console.log(`Stopped hanging agent ${this.name}. Now restarting.`);
+                this.start(true, 'Agent process restarted.', this.count_id, this.worker_url);
             });
             this.stop(); // sends SIGINT
         } else {
-             this.start(true, 'Agent process restarted.', this.count_id, this.worker_url);
+            this.start(true, 'Agent process restarted.', this.count_id, this.worker_url);
         }
     }
 }

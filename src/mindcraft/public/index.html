@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>MindServer Agent</title>
     <script src="/socket.io/socket.io.js"></script>
@@ -9,6 +10,7 @@
             padding: 0;
             box-sizing: border-box;
         }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #1a1a1a;
@@ -18,37 +20,44 @@
             height: 100vh;
             overflow: hidden;
         }
+
         .header {
             background: #2d2d2d;
             padding: 16px 24px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
             display: flex;
             align-items: center;
             justify-content: space-between;
         }
+
         .header h1 {
             color: #ffffff;
             font-size: 1.8em;
             font-weight: 600;
         }
+
         .status-badge {
             padding: 6px 12px;
             border-radius: 4px;
             font-size: 0.9em;
             font-weight: 500;
         }
-        .status-badge.online { 
+
+        .status-badge.online {
             background: #4CAF50;
             color: white;
         }
-        .status-badge.offline { 
+
+        .status-badge.offline {
             background: #f44336;
             color: white;
         }
-        .status-badge.connecting { 
+
+        .status-badge.connecting {
             background: #ff9800;
             color: white;
         }
+
         .main-content {
             flex: 1;
             display: flex;
@@ -56,6 +65,7 @@
             padding: 24px;
             overflow: hidden;
         }
+
         .left-panel {
             flex: 2;
             background: #2d2d2d;
@@ -65,6 +75,7 @@
             flex-direction: column;
             overflow: auto;
         }
+
         .right-panel {
             flex: 1;
             background: #2d2d2d;
@@ -74,33 +85,39 @@
             flex-direction: column;
             overflow: auto;
         }
+
         .section-title {
             font-size: 1.2em;
             font-weight: 600;
             margin-bottom: 16px;
             color: #ffffff;
         }
+
         .stat-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 12px;
             margin-bottom: 20px;
         }
+
         .stat-card {
             background: #3a3a3a;
             padding: 12px;
             border-radius: 6px;
         }
+
         .stat-label {
             font-size: 0.85em;
             color: #aaa;
             margin-bottom: 4px;
         }
+
         .stat-value {
             font-size: 1.1em;
             font-weight: 500;
             color: #4CAF50;
         }
+
         .viewer-container {
             width: 100%;
             aspect-ratio: 16/9;
@@ -109,14 +126,17 @@
             overflow: hidden;
             margin-bottom: 20px;
         }
+
         .viewer-container iframe {
             width: 100%;
             height: 100%;
             border: none;
         }
+
         .inventory-section {
             margin-top: 20px;
         }
+
         .inventory-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
@@ -124,22 +144,26 @@
             max-height: 300px;
             overflow-y: auto;
         }
+
         .inventory-item {
             background: #3a3a3a;
             padding: 8px;
             border-radius: 4px;
             font-size: 0.9em;
         }
+
         .control-panel {
             background: #2d2d2d;
             padding: 16px 24px;
-            box-shadow: 0 -2px 8px rgba(0,0,0,0.3);
+            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
         }
+
         .message-container {
             display: flex;
             gap: 8px;
             margin-bottom: 12px;
         }
+
         .message-input {
             flex: 1;
             background: #3a3a3a;
@@ -149,10 +173,12 @@
             padding: 10px 12px;
             font-size: 1em;
         }
+
         .message-input:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
+
         .btn {
             padding: 10px 16px;
             border: none;
@@ -162,43 +188,54 @@
             font-weight: 500;
             transition: all 0.2s;
         }
+
         .btn:disabled {
             opacity: 0.4;
             cursor: not-allowed;
         }
+
         .btn-primary {
             background: #2196F3;
             color: white;
         }
+
         .btn-primary:hover:not(:disabled) {
             background: #1976D2;
         }
+
         .btn-success {
             background: #4CAF50;
             color: white;
         }
+
         .btn-success:hover:not(:disabled) {
             background: #45a049;
         }
+
         .btn-danger {
             background: #f44336;
             color: white;
         }
+
         .btn-danger:hover:not(:disabled) {
             background: #d32f2f;
         }
+
         .btn-secondary {
             background: #505050;
             color: white;
         }
+
         .btn-secondary:hover:not(:disabled) {
             background: #5a5a5a;
         }
+
         .button-group {
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
         }
+
         .last-message {
             background: #3a3a3a;
             padding: 12px;
@@ -208,16 +245,19 @@
             margin-top: 12px;
             min-height: 50px;
         }
+
         .no-agent {
             text-align: center;
             padding: 40px;
             color: #888;
             font-size: 1.1em;
         }
+
         .action-text {
             color: #aaa;
             font-size: 0.95em;
         }
+
         .onboarding-overlay {
             position: fixed;
             top: 0;
@@ -231,17 +271,19 @@
             z-index: 1000;
             overflow-y: auto;
         }
+
         .onboarding-card {
             background: #2d2d2d;
             border-radius: 12px;
             padding: 40px;
             max-width: 600px;
             width: 90%;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
             margin: 20px;
             max-height: 90vh;
             overflow-y: auto;
         }
+
         .onboarding-title {
             font-size: 2em;
             font-weight: 600;
@@ -249,21 +291,25 @@
             margin-bottom: 12px;
             text-align: center;
         }
+
         .onboarding-subtitle {
             color: #aaa;
             text-align: center;
             margin-bottom: 32px;
             font-size: 1.05em;
         }
+
         .form-group {
             margin-bottom: 24px;
         }
+
         .form-label {
             display: block;
             color: #e0e0e0;
             margin-bottom: 8px;
             font-weight: 500;
         }
+
         .form-input {
             width: 100%;
             background: #3a3a3a;
@@ -274,10 +320,12 @@
             font-size: 1.1em;
             transition: border-color 0.3s;
         }
+
         .form-input:focus {
             outline: none;
             border-color: #4CAF50;
         }
+
         .form-select {
             width: 100%;
             background: #3a3a3a;
@@ -289,48 +337,57 @@
             cursor: pointer;
             transition: border-color 0.3s;
         }
+
         .form-select:focus {
             outline: none;
             border-color: #4CAF50;
         }
+
         .form-hint {
             color: #888;
             font-size: 0.9em;
             margin-top: 6px;
         }
+
         .form-error {
             color: #f44336;
             font-size: 0.9em;
             margin-top: 6px;
             display: none;
         }
+
         .form-checkbox-wrapper {
             display: flex;
             align-items: center;
             gap: 10px;
         }
+
         .form-checkbox {
             width: 20px;
             height: 20px;
             cursor: pointer;
         }
+
         .form-checkbox-label {
             color: #e0e0e0;
             font-size: 1em;
             cursor: pointer;
         }
+
         .settings-section {
             background: #3a3a3a;
             padding: 20px;
             border-radius: 8px;
             margin-bottom: 24px;
         }
+
         .settings-section-title {
             font-size: 1.2em;
             font-weight: 600;
             color: #4CAF50;
             margin-bottom: 16px;
         }
+
         .onboarding-btn {
             width: 100%;
             padding: 14px;
@@ -343,13 +400,16 @@
             cursor: pointer;
             transition: background 0.3s;
         }
+
         .onboarding-btn:hover:not(:disabled) {
             background: #45a049;
         }
+
         .onboarding-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
+
         .loading-spinner {
             border: 3px solid #3a3a3a;
             border-top: 3px solid #4CAF50;
@@ -361,24 +421,32 @@
             margin-right: 8px;
             vertical-align: middle;
         }
+
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
     </style>
 </head>
+
 <body>
     <!-- Onboarding Overlay -->
     <div id="onboardingOverlay" class="onboarding-overlay">
         <div class="onboarding-card">
             <h1 class="onboarding-title">Welcome to MindServer</h1>
             <p class="onboarding-subtitle">Configure your AI agent before joining the world</p>
-            
+
             <div class="settings-section">
                 <h3 class="settings-section-title">Agent Identity</h3>
                 <div class="form-group">
                     <label class="form-label" for="agentNameInput">Agent Name</label>
-                    <input type="text" id="agentNameInput" class="form-input" placeholder="Enter a name for your agent..." autocomplete="off">
+                    <input type="text" id="agentNameInput" class="form-input"
+                        placeholder="Enter a name for your agent..." autocomplete="off">
                     <div class="form-hint">Choose a unique name for your Minecraft bot</div>
                     <div class="form-error" id="nameError"></div>
                 </div>
@@ -396,12 +464,12 @@
 
             <div class="settings-section">
                 <h3 class="settings-section-title">Model Configuration</h3>
-                
+
                 <div class="form-group">
                     <label class="form-label" for="modelSelect">AI Model</label>
                     <select id="modelSelect" class="form-select">
-                        <option value="worker/mistralai/devstral-2512:free" selected>Devstral (OpenRouter) - Free</option>
-                        <option value="worker/xiaomi/mimo-v2-flash:free">Xiaomi Mimo V2 Flash (OpenRouter) - Free</option>
+                        <option value="worker/mistralai/mistral-small-3.1-24b-instruct:free" selected>Mistral Small 3.1
+                            24B (OpenRouter) - Free</option>
                         <option value="worker/x-ai/grok-4.1-fast">Grok 4.1 Fast (OpenRouter)</option>
                         <option value="worker/cerebras/zai-glm-4.6">ZAI GLM 4.6 (Cerebras)</option>
                         <option value="worker/cerebras/zai-glm-4.7">ZAI GLM 4.7 (Cerebras)</option>
@@ -412,7 +480,7 @@
 
             <div class="settings-section">
                 <h3 class="settings-section-title">Behavior Settings</h3>
-                
+
                 <div class="form-group">
                     <label class="form-label" for="baseProfileSelect">Base Profile</label>
                     <select id="baseProfileSelect" class="form-select">
@@ -540,7 +608,7 @@
 
     <script>
         const socket = io();
-        
+
         let agentName = null;
         let agentInGame = false;
         let agentSettings = null;
@@ -605,7 +673,7 @@
         finishOnboardingBtn.addEventListener('click', async () => {
             const name = agentNameInput.value.trim();
             const error = validateAgentName(name);
-            
+
             if (error) {
                 nameError.textContent = error;
                 nameError.style.display = 'block';
@@ -634,7 +702,7 @@
                 allow_vision: allowVisionCheckbox.checked,
                 render_bot_view: renderBotViewCheckbox.checked
             };
-            
+
             console.log('DEBUG: Selected model from form:', modelSelect.value);
             console.log('DEBUG: Sending onboarding settings:', onboardingSettings);
 
@@ -658,7 +726,7 @@
         function updateConnectionStatus(status) {
             const badge = document.getElementById('statusBadge');
             badge.className = 'status-badge ' + status;
-            
+
             if (status === 'online') {
                 badge.textContent = 'Connected';
             } else if (status === 'connecting') {
@@ -689,19 +757,19 @@
 
         socket.on('agents-status', (agents) => {
             hasCheckedForAgent = true;
-            
+
             if (agents.length === 0) {
                 // No agents exist, show onboarding
                 showOnboarding();
                 return;
             }
-            
+
             if (agents.length > 0) {
                 const agent = agents[0]; // Use first agent only
                 agentName = agent.name;
                 agentInGame = agent.in_game;
                 viewerPort = agent.viewerPort;
-                
+
                 document.getElementById('agentName').textContent = agentName;
                 updateConnectionStatus(agent.in_game ? 'online' : 'offline');
                 updateControls();
@@ -727,12 +795,12 @@
 
         socket.on('state-update', (states) => {
             if (!agentName || !states[agentName]) return;
-            
+
             const state = states[agentName];
             if (state.error) return;
 
             const gp = state.gameplay || {};
-            
+
             // Update health
             if (typeof gp.health === 'number') {
                 const hMax = typeof gp.healthMax === 'number' ? gp.healthMax : 20;
@@ -849,4 +917,5 @@
         });
     </script>
 </body>
-</html> 
+
+</html>
