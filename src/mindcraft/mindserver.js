@@ -167,6 +167,15 @@ export function createMindServer(host_public = false, port = 8080) {
                     console.log('DEBUG: Set worker_api_key from onboarding');
                 }
 
+                // Handle custom port
+                if (onboardingSettings.port !== undefined && onboardingSettings.port !== '') {
+                    const parsedPort = parseInt(onboardingSettings.port);
+                    if (!isNaN(parsedPort)) {
+                        settings.port = parsedPort;
+                        console.log(`DEBUG: Set port from onboarding: ${settings.port}`);
+                    }
+                }
+
                 console.log(`Profile for ${settings.profile.name}:`, settings.profile);
 
                 // Check if agent already exists
@@ -198,6 +207,10 @@ export function createMindServer(host_public = false, port = 8080) {
                 console.error('Error in onboarding:', error);
                 callback({ success: false, error: error.message || 'Unknown error occurred' });
             }
+        });
+
+        socket.on('get-default-settings', (callback) => {
+            callback({ settings: global.defaultSettings || {} });
         });
 
         socket.on('get-settings', (agentName, callback) => {

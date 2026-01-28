@@ -453,6 +453,15 @@
             </div>
 
             <div class="settings-section">
+                <h3 class="settings-section-title">Server Configuration</h3>
+                <div class="form-group">
+                    <label class="form-label" for="portInput">Minecraft Port</label>
+                    <input type="number" id="portInput" class="form-input" placeholder="55916" autocomplete="off">
+                    <div class="form-hint">The port of the Minecraft server to connect to (-1 for auto-detect)</div>
+                </div>
+            </div>
+
+            <div class="settings-section">
                 <h3 class="settings-section-title">MindServer Key</h3>
                 <div class="form-group">
                     <label class="form-label" for="apiKeyInput">API Key</label>
@@ -618,6 +627,7 @@
         // Onboarding functionality
         const onboardingOverlay = document.getElementById('onboardingOverlay');
         const agentNameInput = document.getElementById('agentNameInput');
+        const portInput = document.getElementById('portInput');
         const apiKeyInput = document.getElementById('apiKeyInput');
         const modelSelect = document.getElementById('modelSelect');
         const baseProfileSelect = document.getElementById('baseProfileSelect');
@@ -629,6 +639,11 @@
 
         function showOnboarding() {
             onboardingOverlay.style.display = 'flex';
+            socket.emit('get-default-settings', (res) => {
+                if (res.settings && res.settings.port !== undefined) {
+                    portInput.value = res.settings.port;
+                }
+            });
             setTimeout(() => agentNameInput.focus(), 100);
         }
 
@@ -695,6 +710,7 @@
             // Build settings from onboarding form
             const onboardingSettings = {
                 name: name,
+                port: portInput.value,
                 model: modelSelect.value,
                 worker_api_key: apiKey,
                 base_profile: baseProfileSelect.value,
