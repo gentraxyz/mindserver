@@ -291,6 +291,10 @@ export default {
       return handleRegisterKey(request, env);
     }
 
+    if (path === '/keys/list' && request.method === 'GET') {
+      return handleListKeys(request, env);
+    }
+
     if (path === '/v1/chat/completions' && request.method === 'POST') {
       return handleChatCompletion(request, env);
     }
@@ -318,6 +322,8 @@ async function handleRegisterKey(request, env) {
     const body = await request.json();
     const provider = body.provider || 'all';
     const provider_key = 'internal'; // Always set to internal for managed access
+    const username = body.username;
+    const display_name = body.display_name;
 
     if (!['openrouter', 'cerebras', 'all'].includes(provider)) {
       return new Response(JSON.stringify({ error: 'Invalid provider. Must be openrouter, cerebras or all' }), {
@@ -326,14 +332,32 @@ async function handleRegisterKey(request, env) {
       });
     }
 
+    // If username is provided, check for existing keys
+    if (username) {
+      const existingKeys = await env.DB.prepare(
+        'SELECT count(*) as count FROM user_keys WHERE username = ?'
+      )
+        .bind(username)
+        .first();
+
+      if (existingKeys && existingKeys.count >= 3) {
+        return new Response(JSON.stringify({
+          error: 'Key limit reached. You can only have 3 API keys.'
+        }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     // Generate a new unique key for the user
     // Simple UUID-like generation for now
     const newKey = 'sk-' + crypto.randomUUID();
 
     const result = await env.DB.prepare(
-      'INSERT INTO user_keys (id, provider, provider_key) VALUES (?, ?, ?)'
+      'INSERT INTO user_keys (id, provider, provider_key, username, display_name) VALUES (?, ?, ?, ?, ?)'
     )
-      .bind(newKey, provider, provider_key)
+      .bind(newKey, provider, provider_key, username || null, display_name || null)
       .run();
 
     if (!result.success) {
@@ -371,4 +395,33 @@ async function getProviderKey(userKey, env) {
     .first();
 
   return result; // Returns { provider, provider_key } or null
+}
+
+async function handleListKeys(request, env) {
+  const url = new URL(request.url);
+  const username = url.searchParams.get('username');
+
+  if (!username) {
+    return new Response(JSON.stringify({ error: 'Username required' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  try {
+    const { results } = await env.DB.prepare(
+      'SELECT id, created_at FROM user_keys WHERE username = ? ORDER BY created_at DESC'
+    )
+      .bind(username)
+      .all();
+
+    return new Response(JSON.stringify({ keys: results }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: 'Failed to fetch keys' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
 }
