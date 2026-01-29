@@ -50,7 +50,7 @@ export default function KeyRegistration() {
     };
 
     return (
-        <div className="w-full max-w-md bg-black border border-white/20 rounded-2xl p-8 animate-fade-in-up">
+        <div className="w-full max-w-md bg-black border border-white/20 rounded-2xl p-8">
 
             <div className="space-y-4">
                 <div className="text-center mb-4">
@@ -84,7 +84,7 @@ export default function KeyRegistration() {
                 )}
 
                 {generatedKey && (
-                    <div className="mt-6 pt-6 border-t border-white/10 animate-fade-in">
+                    <div className="mt-6 pt-6 border-t border-white/10">
                         <label className="block text-sm font-medium text-white mb-2">
                             Your MindServer Access Key
                         </label>
