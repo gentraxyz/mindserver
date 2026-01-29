@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { exchangeCodeForToken, getUserInfo } from '@/lib/gentra';
+import { exchangeCodeForToken, getUserInfo } from '@/lib/google';
 import { createSession } from '@/lib/session';
 import { cookies } from 'next/headers';
 
