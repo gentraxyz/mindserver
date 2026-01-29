@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getAuthUrl } from '@/lib/gentra';
+import { getAuthUrl } from '@/lib/google';
 import { randomBytes } from 'crypto';
 import { cookies } from 'next/headers';
 
