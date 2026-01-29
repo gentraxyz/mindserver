@@ -20,9 +20,9 @@ export default async function Home() {
                 Dashboard
               </Link>
             ) : (
-              <Link href="/api/auth/login" className="text-sm font-medium hover:text-blue-400 transition-colors">
+              <a href="/api/auth/login" className="text-sm font-medium hover:text-blue-400 transition-colors">
                 Sign In
-              </Link>
+              </a>
             )}
           </div>
         </div>
@@ -47,7 +47,7 @@ export default async function Home() {
                 Go to Dashboard
               </Link>
             ) : (
-              <Link
+              <a
                 href="/api/auth/login"
                 className="w-full sm:w-auto px-8 py-4 bg-[#4A90E2] text-white font-bold rounded-lg hover:bg-[#357ABD] transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2"
               >
@@ -55,7 +55,7 @@ export default async function Home() {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
                 </svg>
-              </Link>
+              </a>
             )}
           </div>
         </div>
