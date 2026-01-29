@@ -21,7 +21,11 @@ export async function GET(request: NextRequest) {
     const cookieStore = await cookies();
     const storedState = cookieStore.get('oauth_state')?.value;
 
+    console.log('Callback State Check:', { received: state, stored: storedState });
+
+    // TEMPORARY: Relax state check for debugging if needed, but keeping strict for now
     if (!storedState || state !== storedState) {
+        console.error('State mismatch error');
         return NextResponse.redirect(new URL('/?error=invalid_state', request.url));
     }
 
@@ -29,14 +33,18 @@ export async function GET(request: NextRequest) {
     cookieStore.delete('oauth_state');
 
     try {
+        console.log('Exchanging code for token...');
         const token = await exchangeCodeForToken(code);
+        console.log('Token received, fetching user info...');
         const user = await getUserInfo(token);
+        console.log('User info received:', user);
 
         await createSession(user);
+        console.log('Session created, redirecting to dashboard...');
 
         return NextResponse.redirect(new URL('/dashboard', request.url));
     } catch (err) {
-        console.error('Auth error:', err);
+        console.error('Auth error detailed:', err);
         return NextResponse.redirect(new URL('/?error=auth_failed', request.url));
     }
 }
