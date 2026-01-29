@@ -33,9 +33,26 @@ export async function exchangeCodeForToken(code: string): Promise<string> {
         body,
     });
 
-    const data = await res.json();
+    const text = await res.text();
+    let data;
+    try {
+        data = JSON.parse(text);
+    } catch (e) {
+        console.error('Failed to parse token response JSON:', text);
+        throw new Error(`Invalid JSON response from Gentra: ${text.substring(0, 100)}...`);
+    }
 
     if (!res.ok) {
+        console.error('Token exchange failed:', {
+            status: res.status,
+            body: data,
+            params: {
+                // Don't log client_secret
+                client_id: config.gentra.clientId,
+                redirect_uri: config.gentra.redirectUri,
+                code: 'REDACTED'
+            }
+        });
         throw new Error(data.error_description || data.error || 'Failed to exchange code');
     }
 
