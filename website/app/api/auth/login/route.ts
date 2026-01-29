@@ -12,8 +12,9 @@ export async function GET() {
     cookieStore.set('oauth_state', state, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        sameSite: 'lax', // Lax is required for redirects to work
         maxAge: 60 * 10, // 10 minutes
+        path: '/', // Ensure path is root
     });
 
     const url = getAuthUrl(state);
