@@ -18,17 +18,7 @@ export default async function Dashboard() {
                     <h1 className="text-2xl font-bold tracking-tight">MindServer</h1>
                 </div>
                 <div className="flex items-center gap-4">
-                    {user.profile_image_url ? (
-                        <img
-                            src={user.profile_image_url}
-                            alt={user.display_name || 'User'}
-                            className="w-8 h-8 rounded-full border border-white/20"
-                        />
-                    ) : (
-                        <div className="w-8 h-8 rounded-full border border-white/20 bg-gray-800 flex items-center justify-center">
-                            <span className="text-xs font-bold">{user.display_name?.[0] || 'U'}</span>
-                        </div>
-                    )}
+
                     <span className="text-sm text-gray-400 hidden sm:block">{user.display_name || user.username || 'User'}</span>
                     <a
                         href="/api/auth/logout"
