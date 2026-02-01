@@ -556,6 +556,159 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #444444;
         }
+
+        /* Custom Searchable Dropdown */
+        .custom-dropdown {
+            position: relative;
+            width: 100%;
+        }
+
+        .custom-dropdown-trigger {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border-radius: 8px;
+            padding: 16px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: left;
+        }
+
+        .custom-dropdown-trigger:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .custom-dropdown-trigger.open {
+            border-color: rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.08);
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        .custom-dropdown-arrow {
+            width: 16px;
+            height: 16px;
+            transition: transform 0.2s ease;
+        }
+
+        .custom-dropdown-trigger.open .custom-dropdown-arrow {
+            transform: rotate(180deg);
+        }
+
+        .custom-dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #0a0a0a;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transition: max-height 0.3s ease, opacity 0.2s ease;
+            z-index: 100;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .custom-dropdown-menu.open {
+            max-height: 320px;
+            opacity: 1;
+        }
+
+        .custom-dropdown-search {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 0;
+            background: #0a0a0a;
+            z-index: 1;
+        }
+
+        .custom-dropdown-search input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            border-radius: 6px;
+            padding: 10px 14px;
+            font-size: 0.9em;
+            transition: all 0.2s;
+        }
+
+        .custom-dropdown-search input::placeholder {
+            color: #666;
+        }
+
+        .custom-dropdown-search input:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .custom-dropdown-options {
+            max-height: 240px;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+
+        .custom-dropdown-option {
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            color: #ccc;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .custom-dropdown-option:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+        }
+
+        .custom-dropdown-option.selected {
+            background: rgba(255, 255, 255, 0.12);
+            color: #ffffff;
+        }
+
+        .custom-dropdown-option.selected::before {
+            content: '✓';
+            font-size: 0.85em;
+            color: #ffffff;
+        }
+
+        .custom-dropdown-option.hidden {
+            display: none;
+        }
+
+        .custom-dropdown-no-results {
+            padding: 16px;
+            color: #666;
+            text-align: center;
+            font-size: 0.9em;
+        }
+
+        .custom-dropdown-option-text {
+            flex: 1;
+        }
+
+        .custom-dropdown-option-badge {
+            font-size: 0.75em;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
     </style>
 </head>
 
@@ -602,15 +755,45 @@
                     <h3 class="settings-section-title">Model Configuration</h3>
 
                     <div class="form-group">
-                        <label class="form-label" for="modelSelect">AI Model</label>
-                        <select id="modelSelect" class="form-select">
-                            <option value="worker/mistralai/mistral-small-3.1-24b-instruct:free" selected>Mistral Small
-                                3.1
-                                24B</option>
-                            <option value="worker/x-ai/grok-4.1-fast">Grok 4.1 Fast</option>
-                            <option value="worker/cerebras/zai-glm-4.6">ZAI GLM 4.6</option>
-                            <option value="worker/cerebras/zai-glm-4.7">ZAI GLM 4.7</option>
-                        </select>
+                        <label class="form-label">AI Model</label>
+                        <input type="hidden" id="modelSelect"
+                            value="worker/mistralai/mistral-small-3.1-24b-instruct:free">
+                        <div class="custom-dropdown" id="modelDropdown">
+                            <button type="button" class="custom-dropdown-trigger" id="modelDropdownTrigger">
+                                <span class="custom-dropdown-selected">Mistral Small 3.1 24B</span>
+                                <svg class="custom-dropdown-arrow" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div class="custom-dropdown-menu" id="modelDropdownMenu">
+                                <div class="custom-dropdown-search">
+                                    <input type="text" id="modelSearchInput" placeholder="Search models..."
+                                        autocomplete="off">
+                                </div>
+                                <div class="custom-dropdown-options" id="modelDropdownOptions">
+                                    <div class="custom-dropdown-option selected"
+                                        data-value="worker/mistralai/mistral-small-3.1-24b-instruct:free">
+                                        <span class="custom-dropdown-option-text">Mistral Small 3.1 24B</span>
+                                        <span class="custom-dropdown-option-badge">Free</span>
+                                    </div>
+                                    <div class="custom-dropdown-option" data-value="worker/x-ai/grok-4.1-fast">
+                                        <span class="custom-dropdown-option-text">Grok 4.1 Fast</span>
+                                        <span class="custom-dropdown-option-badge">Fast</span>
+                                    </div>
+                                    <div class="custom-dropdown-option" data-value="worker/cerebras/zai-glm-4.6">
+                                        <span class="custom-dropdown-option-text">ZAI GLM 4.6</span>
+                                        <span class="custom-dropdown-option-badge">Cerebras</span>
+                                    </div>
+                                    <div class="custom-dropdown-option" data-value="worker/cerebras/zai-glm-4.7">
+                                        <span class="custom-dropdown-option-text">ZAI GLM 4.7</span>
+                                        <span class="custom-dropdown-option-badge">Cerebras</span>
+                                    </div>
+                                </div>
+                                <div class="custom-dropdown-no-results" style="display: none;">No models found</div>
+                            </div>
+                        </div>
                         <div class="form-hint">Choose the AI model to power your agent</div>
                     </div>
                 </div>
@@ -619,13 +802,47 @@
                     <h3 class="settings-section-title">Behavior Settings</h3>
 
                     <div class="form-group">
-                        <label class="form-label" for="baseProfileSelect">Base Profile</label>
-                        <select id="baseProfileSelect" class="form-select">
-                            <option value="assistant">Assistant - Helpful and cooperative</option>
-                            <option value="survival">Survival - Focused on survival gameplay</option>
-                            <option value="creative">Creative - Building and creativity focused</option>
-                            <option value="god_mode">God Mode - Full control and capabilities</option>
-                        </select>
+                        <label class="form-label">Base Profile</label>
+                        <input type="hidden" id="baseProfileSelect" value="assistant">
+                        <div class="custom-dropdown" id="profileDropdown">
+                            <button type="button" class="custom-dropdown-trigger" id="profileDropdownTrigger">
+                                <span class="custom-dropdown-selected">Assistant - Helpful and cooperative</span>
+                                <svg class="custom-dropdown-arrow" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div class="custom-dropdown-menu" id="profileDropdownMenu">
+                                <div class="custom-dropdown-search">
+                                    <input type="text" id="profileSearchInput" placeholder="Search profiles..."
+                                        autocomplete="off">
+                                </div>
+                                <div class="custom-dropdown-options" id="profileDropdownOptions">
+                                    <div class="custom-dropdown-option selected" data-value="assistant">
+                                        <span class="custom-dropdown-option-text">Assistant - Helpful and
+                                            cooperative</span>
+                                        <span class="custom-dropdown-option-badge">Default</span>
+                                    </div>
+                                    <div class="custom-dropdown-option" data-value="survival">
+                                        <span class="custom-dropdown-option-text">Survival - Focused on survival
+                                            gameplay</span>
+                                        <span class="custom-dropdown-option-badge">Game</span>
+                                    </div>
+                                    <div class="custom-dropdown-option" data-value="creative">
+                                        <span class="custom-dropdown-option-text">Creative - Building and creativity
+                                            focused</span>
+                                        <span class="custom-dropdown-option-badge">Build</span>
+                                    </div>
+                                    <div class="custom-dropdown-option" data-value="god_mode">
+                                        <span class="custom-dropdown-option-text">God Mode - Full control and
+                                            capabilities</span>
+                                        <span class="custom-dropdown-option-badge">Power</span>
+                                    </div>
+                                </div>
+                                <div class="custom-dropdown-no-results" style="display: none;">No profiles found</div>
+                            </div>
+                        </div>
                         <div class="form-hint">Choose the agent's base behavior style</div>
                     </div>
 
@@ -769,6 +986,286 @@
         const renderBotViewCheckbox = document.getElementById('renderBotViewCheckbox');
         const finishOnboardingBtn = document.getElementById('finishOnboardingBtn');
         const nameError = document.getElementById('nameError');
+
+        // Custom Model Dropdown Functionality
+        const modelDropdown = document.getElementById('modelDropdown');
+        const modelDropdownTrigger = document.getElementById('modelDropdownTrigger');
+        const modelDropdownMenu = document.getElementById('modelDropdownMenu');
+        const modelSearchInput = document.getElementById('modelSearchInput');
+        const modelDropdownOptions = document.getElementById('modelDropdownOptions');
+        const modelNoResults = modelDropdownMenu.querySelector('.custom-dropdown-no-results');
+
+        function toggleModelDropdown() {
+            const isOpen = modelDropdownMenu.classList.contains('open');
+            if (isOpen) {
+                closeModelDropdown();
+            } else {
+                openModelDropdown();
+            }
+        }
+
+        function openModelDropdown() {
+            modelDropdownTrigger.classList.add('open');
+            modelDropdownMenu.classList.add('open');
+            setTimeout(() => modelSearchInput.focus(), 50);
+        }
+
+        function closeModelDropdown() {
+            modelDropdownTrigger.classList.remove('open');
+            modelDropdownMenu.classList.remove('open');
+            modelSearchInput.value = '';
+            filterModelOptions('');
+        }
+
+        function filterModelOptions(query) {
+            const options = modelDropdownOptions.querySelectorAll('.custom-dropdown-option');
+            let visibleCount = 0;
+            const searchTerm = query.toLowerCase().trim();
+
+            options.forEach(option => {
+                const text = option.querySelector('.custom-dropdown-option-text').textContent.toLowerCase();
+                const badge = option.querySelector('.custom-dropdown-option-badge')?.textContent.toLowerCase() || '';
+                const matches = text.includes(searchTerm) || badge.includes(searchTerm);
+
+                if (matches) {
+                    option.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    option.classList.add('hidden');
+                }
+            });
+
+            modelNoResults.style.display = visibleCount === 0 ? 'block' : 'none';
+        }
+
+        function selectModelOption(option) {
+            const value = option.getAttribute('data-value');
+            const text = option.querySelector('.custom-dropdown-option-text').textContent;
+
+            // Update hidden input
+            modelSelect.value = value;
+
+            // Update trigger display
+            modelDropdownTrigger.querySelector('.custom-dropdown-selected').textContent = text;
+
+            // Update selected state
+            modelDropdownOptions.querySelectorAll('.custom-dropdown-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            option.classList.add('selected');
+
+            closeModelDropdown();
+        }
+
+        // Event Listeners for Model Dropdown
+        modelDropdownTrigger.addEventListener('click', (e) => {
+            e.preventDefault();
+            toggleModelDropdown();
+        });
+
+        modelSearchInput.addEventListener('input', (e) => {
+            filterModelOptions(e.target.value);
+        });
+
+        modelSearchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModelDropdown();
+            } else if (e.key === 'Enter') {
+                const visibleOptions = Array.from(modelDropdownOptions.querySelectorAll('.custom-dropdown-option:not(.hidden)'));
+                if (visibleOptions.length > 0) {
+                    selectModelOption(visibleOptions[0]);
+                }
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                const visibleOptions = Array.from(modelDropdownOptions.querySelectorAll('.custom-dropdown-option:not(.hidden)'));
+                if (visibleOptions.length > 0) {
+                    visibleOptions[0].focus();
+                }
+            }
+        });
+
+        modelDropdownOptions.addEventListener('click', (e) => {
+            const option = e.target.closest('.custom-dropdown-option');
+            if (option) {
+                selectModelOption(option);
+            }
+        });
+
+        // Handle keyboard navigation in options
+        modelDropdownOptions.addEventListener('keydown', (e) => {
+            const options = Array.from(modelDropdownOptions.querySelectorAll('.custom-dropdown-option:not(.hidden)'));
+            const currentIndex = options.indexOf(document.activeElement);
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                const nextIndex = Math.min(currentIndex + 1, options.length - 1);
+                options[nextIndex]?.focus();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (currentIndex <= 0) {
+                    modelSearchInput.focus();
+                } else {
+                    options[currentIndex - 1]?.focus();
+                }
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (document.activeElement.classList.contains('custom-dropdown-option')) {
+                    selectModelOption(document.activeElement);
+                }
+            } else if (e.key === 'Escape') {
+                closeModelDropdown();
+            }
+        });
+
+        // Make options focusable
+        modelDropdownOptions.querySelectorAll('.custom-dropdown-option').forEach(option => {
+            option.setAttribute('tabindex', '0');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!modelDropdown.contains(e.target)) {
+                closeModelDropdown();
+            }
+            if (!profileDropdown.contains(e.target)) {
+                closeProfileDropdown();
+            }
+        });
+
+        // Custom Profile Dropdown Functionality
+        const profileDropdown = document.getElementById('profileDropdown');
+        const profileDropdownTrigger = document.getElementById('profileDropdownTrigger');
+        const profileDropdownMenu = document.getElementById('profileDropdownMenu');
+        const profileSearchInput = document.getElementById('profileSearchInput');
+        const profileDropdownOptions = document.getElementById('profileDropdownOptions');
+        const profileNoResults = profileDropdownMenu.querySelector('.custom-dropdown-no-results');
+
+        function toggleProfileDropdown() {
+            const isOpen = profileDropdownMenu.classList.contains('open');
+            if (isOpen) {
+                closeProfileDropdown();
+            } else {
+                openProfileDropdown();
+            }
+        }
+
+        function openProfileDropdown() {
+            profileDropdownTrigger.classList.add('open');
+            profileDropdownMenu.classList.add('open');
+            setTimeout(() => profileSearchInput.focus(), 50);
+        }
+
+        function closeProfileDropdown() {
+            profileDropdownTrigger.classList.remove('open');
+            profileDropdownMenu.classList.remove('open');
+            profileSearchInput.value = '';
+            filterProfileOptions('');
+        }
+
+        function filterProfileOptions(query) {
+            const options = profileDropdownOptions.querySelectorAll('.custom-dropdown-option');
+            let visibleCount = 0;
+            const searchTerm = query.toLowerCase().trim();
+
+            options.forEach(option => {
+                const text = option.querySelector('.custom-dropdown-option-text').textContent.toLowerCase();
+                const badge = option.querySelector('.custom-dropdown-option-badge')?.textContent.toLowerCase() || '';
+                const matches = text.includes(searchTerm) || badge.includes(searchTerm);
+
+                if (matches) {
+                    option.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    option.classList.add('hidden');
+                }
+            });
+
+            profileNoResults.style.display = visibleCount === 0 ? 'block' : 'none';
+        }
+
+        function selectProfileOption(option) {
+            const value = option.getAttribute('data-value');
+            const text = option.querySelector('.custom-dropdown-option-text').textContent;
+
+            // Update hidden input
+            baseProfileSelect.value = value;
+
+            // Update trigger display
+            profileDropdownTrigger.querySelector('.custom-dropdown-selected').textContent = text;
+
+            // Update selected state
+            profileDropdownOptions.querySelectorAll('.custom-dropdown-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            option.classList.add('selected');
+
+            closeProfileDropdown();
+        }
+
+        // Event Listeners for Profile Dropdown
+        profileDropdownTrigger.addEventListener('click', (e) => {
+            e.preventDefault();
+            toggleProfileDropdown();
+        });
+
+        profileSearchInput.addEventListener('input', (e) => {
+            filterProfileOptions(e.target.value);
+        });
+
+        profileSearchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeProfileDropdown();
+            } else if (e.key === 'Enter') {
+                const visibleOptions = Array.from(profileDropdownOptions.querySelectorAll('.custom-dropdown-option:not(.hidden)'));
+                if (visibleOptions.length > 0) {
+                    selectProfileOption(visibleOptions[0]);
+                }
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                const visibleOptions = Array.from(profileDropdownOptions.querySelectorAll('.custom-dropdown-option:not(.hidden)'));
+                if (visibleOptions.length > 0) {
+                    visibleOptions[0].focus();
+                }
+            }
+        });
+
+        profileDropdownOptions.addEventListener('click', (e) => {
+            const option = e.target.closest('.custom-dropdown-option');
+            if (option) {
+                selectProfileOption(option);
+            }
+        });
+
+        // Handle keyboard navigation in profile options
+        profileDropdownOptions.addEventListener('keydown', (e) => {
+            const options = Array.from(profileDropdownOptions.querySelectorAll('.custom-dropdown-option:not(.hidden)'));
+            const currentIndex = options.indexOf(document.activeElement);
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                const nextIndex = Math.min(currentIndex + 1, options.length - 1);
+                options[nextIndex]?.focus();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (currentIndex <= 0) {
+                    profileSearchInput.focus();
+                } else {
+                    options[currentIndex - 1]?.focus();
+                }
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (document.activeElement.classList.contains('custom-dropdown-option')) {
+                    selectProfileOption(document.activeElement);
+                }
+            } else if (e.key === 'Escape') {
+                closeProfileDropdown();
+            }
+        });
+
+        // Make profile options focusable
+        profileDropdownOptions.querySelectorAll('.custom-dropdown-option').forEach(option => {
+            option.setAttribute('tabindex', '0');
+        });
 
         function showOnboarding() {
             onboardingOverlay.style.display = 'flex';
