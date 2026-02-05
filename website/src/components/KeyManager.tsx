@@ -14,8 +14,17 @@ interface User {
     profile_image_url: string | null;
 }
 
+interface Usage {
+    count: number;
+    limit: number;
+    remaining: number;
+    percentUsed: number;
+    date: string;
+}
+
 export default function KeyManager({ user }: { user: User }) {
     const [keys, setKeys] = useState<Key[]>([]);
+    const [usage, setUsage] = useState<Usage | null>(null);
     const [loading, setLoading] = useState(false);
     const [generating, setGenerating] = useState(false);
     const [error, setError] = useState('');
@@ -23,6 +32,7 @@ export default function KeyManager({ user }: { user: User }) {
 
     useEffect(() => {
         fetchKeys();
+        fetchUsage();
     }, []);
 
     const fetchKeys = async () => {
@@ -39,6 +49,20 @@ export default function KeyManager({ user }: { user: User }) {
             console.error('Error fetching keys:', err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchUsage = async () => {
+        try {
+            const res = await fetch(`${config.worker.url}/usage?username=${user.username}`);
+            const data = await res.json();
+            if (res.ok) {
+                setUsage(data);
+            } else {
+                console.error('Failed to fetch usage:', data);
+            }
+        } catch (err) {
+            console.error('Error fetching usage:', err);
         }
     };
 
@@ -75,8 +99,51 @@ export default function KeyManager({ user }: { user: User }) {
         setTimeout(() => setCopiedKey(null), 2000);
     };
 
+    const getUsageColor = (percent: number) => {
+        if (percent >= 90) return 'bg-red-500';
+        if (percent >= 70) return 'bg-yellow-500';
+        return 'bg-emerald-500';
+    };
+
     return (
         <div className="w-full max-w-2xl mx-auto space-y-8">
+            {/* Daily Usage Card */}
+            <div className="bg-black/50 border border-white/10 rounded-2xl p-8 backdrop-blur-sm">
+                <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold text-white">Daily Usage</h2>
+                    <span className="text-sm text-gray-400">Resets at midnight UTC</span>
+                </div>
+
+                {usage ? (
+                    <div className="space-y-4">
+                        <div className="flex items-end justify-between">
+                            <div>
+                                <span className="text-4xl font-bold text-white">{usage.count}</span>
+                                <span className="text-xl text-gray-400 ml-1">/ {usage.limit}</span>
+                            </div>
+                            <span className="text-lg text-gray-400">{usage.remaining} remaining</span>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="relative h-4 bg-white/10 rounded-full overflow-hidden">
+                            <div
+                                className={`absolute left-0 top-0 h-full transition-all duration-500 ${getUsageColor(usage.percentUsed)}`}
+                                style={{ width: `${Math.min(usage.percentUsed, 100)}%` }}
+                            />
+                        </div>
+
+                        <p className="text-xs text-gray-500 text-center">
+                            {usage.percentUsed >= 100
+                                ? 'Daily limit reached. Your limit will reset at midnight UTC.'
+                                : `${usage.percentUsed}% of daily limit used`}
+                        </p>
+                    </div>
+                ) : (
+                    <div className="text-center py-8 text-gray-500">Loading usage...</div>
+                )}
+            </div>
+
+            {/* API Keys Card */}
             <div className="bg-black/50 border border-white/10 rounded-2xl p-8 backdrop-blur-sm">
                 <div className="flex items-center justify-between mb-8">
                     <h2 className="text-2xl font-bold text-white">Your API Keys</h2>
@@ -140,7 +207,7 @@ export default function KeyManager({ user }: { user: User }) {
 
                 <div className="mt-6 pt-6 border-t border-white/10 text-center">
                     <p className="text-xs text-gray-500">
-                        You can create up to 3 API keys. Keep them secure - they provide access to your AI agent.
+                        You can create up to 3 API keys. All keys share your daily usage limit.
                     </p>
                 </div>
             </div>

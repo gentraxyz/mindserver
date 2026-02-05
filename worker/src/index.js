@@ -9,12 +9,91 @@
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const CEREBRAS_API_URL = 'https://api.cerebras.ai/v1/chat/completions';
 
+// Daily request limit per user (shared across all their API keys)
+const DAILY_REQUEST_LIMIT = 100;
+
 // CORS headers for browser requests
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
+
+/**
+ * Get today's date in YYYY-MM-DD format (UTC)
+ */
+function getTodayDate() {
+  return new Date().toISOString().split('T')[0];
+}
+
+/**
+ * Get current usage for a user
+ */
+async function getUserUsage(username, env) {
+  if (!username) return { count: 0, limit: DAILY_REQUEST_LIMIT };
+
+  const today = getTodayDate();
+  const result = await env.DB.prepare(
+    'SELECT request_count FROM user_usage WHERE username = ? AND date = ?'
+  )
+    .bind(username, today)
+    .first();
+
+  return {
+    count: result?.request_count || 0,
+    limit: DAILY_REQUEST_LIMIT,
+    date: today
+  };
+}
+
+/**
+ * Increment usage for a user
+ */
+async function incrementUserUsage(username, env) {
+  if (!username) return;
+
+  const today = getTodayDate();
+
+  // Use UPSERT pattern - insert or update if exists
+  await env.DB.prepare(`
+    INSERT INTO user_usage (username, date, request_count) 
+    VALUES (?, ?, 1)
+    ON CONFLICT(username, date) 
+    DO UPDATE SET request_count = request_count + 1
+  `)
+    .bind(username, today)
+    .run();
+}
+
+/**
+ * Check if user has exceeded daily limit
+ */
+async function checkUsageLimit(username, env) {
+  if (!username) return { allowed: true, usage: { count: 0, limit: DAILY_REQUEST_LIMIT } };
+
+  const usage = await getUserUsage(username, env);
+  return {
+    allowed: usage.count < DAILY_REQUEST_LIMIT,
+    usage
+  };
+}
+
+/**
+ * Get username from API key
+ */
+async function getUsernameFromKey(userKey, env) {
+  if (!userKey || !userKey.startsWith('sk-')) {
+    return null;
+  }
+
+  const result = await env.DB.prepare(
+    'SELECT username FROM user_keys WHERE id = ?'
+  )
+    .bind(userKey)
+    .first();
+
+  return result?.username || null;
+}
 
 /**
  * Determine which provider to use based on model name
@@ -71,6 +150,21 @@ async function handleChatCompletion(request, env) {
         error: 'Invalid API Key'
       }), {
         status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Get username and check usage limit
+    const username = await getUsernameFromKey(userKey, env);
+    const { allowed, usage } = await checkUsageLimit(username, env);
+
+    if (!allowed) {
+      return new Response(JSON.stringify({
+        error: 'Daily request limit exceeded',
+        message: `You have used ${usage.count}/${usage.limit} requests today. Your limit resets at midnight UTC.`,
+        usage
+      }), {
+        status: 429,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -146,6 +240,9 @@ async function handleChatCompletion(request, env) {
       });
     }
 
+    // Increment usage counter after successful request
+    await incrementUserUsage(username, env);
+
     return new Response(JSON.stringify(responseData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -193,6 +290,21 @@ async function handleEmbedding(request, env) {
       error: 'Invalid API Key or provider does not support embeddings (requires OpenRouter)'
     }), {
       status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  // Get username and check usage limit
+  const username = await getUsernameFromKey(userKey, env);
+  const { allowed, usage } = await checkUsageLimit(username, env);
+
+  if (!allowed) {
+    return new Response(JSON.stringify({
+      error: 'Daily request limit exceeded',
+      message: `You have used ${usage.count}/${usage.limit} requests today. Your limit resets at midnight UTC.`,
+      usage
+    }), {
+      status: 429,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
@@ -249,6 +361,9 @@ async function handleEmbedding(request, env) {
       });
     }
 
+    // Increment usage counter after successful request
+    await incrementUserUsage(username, env);
+
     return new Response(JSON.stringify(responseData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -258,6 +373,39 @@ async function handleEmbedding(request, env) {
       error: 'Failed to process embedding request',
       details: error.message
     }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+}
+
+/**
+ * Handle usage endpoint - get current usage for a user
+ */
+async function handleGetUsage(request, env) {
+  const url = new URL(request.url);
+  const username = url.searchParams.get('username');
+
+  if (!username) {
+    return new Response(JSON.stringify({ error: 'Username required' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  try {
+    const usage = await getUserUsage(username, env);
+
+    return new Response(JSON.stringify({
+      username,
+      ...usage,
+      remaining: Math.max(0, usage.limit - usage.count),
+      percentUsed: Math.round((usage.count / usage.limit) * 100)
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: 'Failed to fetch usage' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -293,6 +441,10 @@ export default {
 
     if (path === '/keys/list' && request.method === 'GET') {
       return handleListKeys(request, env);
+    }
+
+    if (path === '/usage' && request.method === 'GET') {
+      return handleGetUsage(request, env);
     }
 
     if (path === '/v1/chat/completions' && request.method === 'POST') {
