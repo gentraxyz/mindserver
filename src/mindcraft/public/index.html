@@ -734,9 +734,41 @@
                 <div class="settings-section">
                     <h3 class="settings-section-title">Server Configuration</h3>
                     <div class="form-group">
+                        <label class="form-label" for="hostInput">Server Host</label>
+                        <input type="text" id="hostInput" class="form-input" placeholder="localhost" autocomplete="off">
+                        <div class="form-hint">Server IP or domain name</div>
+                    </div>
+                    <div class="form-group">
                         <label class="form-label" for="portInput">Minecraft Port</label>
                         <input type="number" id="portInput" class="form-input" placeholder="55916" autocomplete="off">
                         <div class="form-hint">The port of the Minecraft server to connect to (-1 for auto-detect)</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Authentication Type</label>
+                        <input type="hidden" id="authSelect" value="offline">
+                        <div class="custom-dropdown" id="authDropdown">
+                            <button type="button" class="custom-dropdown-trigger" id="authDropdownTrigger">
+                                <span class="custom-dropdown-selected">Offline Mode</span>
+                                <svg class="custom-dropdown-arrow" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div class="custom-dropdown-menu" id="authDropdownMenu">
+                                <div class="custom-dropdown-options" id="authDropdownOptions">
+                                    <div class="custom-dropdown-option selected" data-value="offline">
+                                        <span class="custom-dropdown-option-text">Offline Mode</span>
+                                        <span class="custom-dropdown-option-badge">Default</span>
+                                    </div>
+                                    <div class="custom-dropdown-option" data-value="microsoft">
+                                        <span class="custom-dropdown-option-text">Microsoft Account</span>
+                                        <span class="custom-dropdown-option-badge">Online</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-hint">Choose authentication method for server connection</div>
                     </div>
                 </div>
 
@@ -748,6 +780,10 @@
                             autocomplete="off">
                         <div class="form-hint">Paste your registered MindServer API Key (starts with sk-)</div>
                         <div class="form-error" id="apiKeyError"></div>
+                    </div>
+                    <div class="form-group">
+                        <button id="skipApiKeyBtn" class="btn btn-secondary" style="width: 100%; margin-top: 10px;">Skip API Key (Unlimited Usage)</button>
+                        <div class="form-hint">Bypass API key requirement for local testing</div>
                     </div>
                 </div>
 
@@ -977,14 +1013,17 @@
         // Onboarding functionality
         const onboardingOverlay = document.getElementById('onboardingOverlay');
         const agentNameInput = document.getElementById('agentNameInput');
+        const hostInput = document.getElementById('hostInput');
         const portInput = document.getElementById('portInput');
         const apiKeyInput = document.getElementById('apiKeyInput');
         const modelSelect = document.getElementById('modelSelect');
         const baseProfileSelect = document.getElementById('baseProfileSelect');
+        const authSelect = document.getElementById('authSelect');
         const allowInsecureCodingCheckbox = document.getElementById('allowInsecureCodingCheckbox');
         const allowVisionCheckbox = document.getElementById('allowVisionCheckbox');
         const renderBotViewCheckbox = document.getElementById('renderBotViewCheckbox');
         const finishOnboardingBtn = document.getElementById('finishOnboardingBtn');
+        const skipApiKeyBtn = document.getElementById('skipApiKeyBtn');
         const nameError = document.getElementById('nameError');
 
         // Custom Model Dropdown Functionality
@@ -1130,6 +1169,71 @@
             if (!profileDropdown.contains(e.target)) {
                 closeProfileDropdown();
             }
+            if (!authDropdown.contains(e.target)) {
+                closeAuthDropdown();
+            }
+        });
+
+        // Custom Auth Dropdown Functionality
+        const authDropdown = document.getElementById('authDropdown');
+        const authDropdownTrigger = document.getElementById('authDropdownTrigger');
+        const authDropdownMenu = document.getElementById('authDropdownMenu');
+        const authDropdownOptions = document.getElementById('authDropdownOptions');
+
+        function toggleAuthDropdown() {
+            const isOpen = authDropdownMenu.classList.contains('open');
+            if (isOpen) {
+                closeAuthDropdown();
+            } else {
+                openAuthDropdown();
+            }
+        }
+
+        function openAuthDropdown() {
+            authDropdownTrigger.classList.add('open');
+            authDropdownMenu.classList.add('open');
+        }
+
+        function closeAuthDropdown() {
+            authDropdownTrigger.classList.remove('open');
+            authDropdownMenu.classList.remove('open');
+        }
+
+        function selectAuthOption(option) {
+            const value = option.getAttribute('data-value');
+            const text = option.querySelector('.custom-dropdown-option-text').textContent;
+
+            // Update hidden input
+            authSelect.value = value;
+
+            // Update trigger display
+            authDropdownTrigger.querySelector('.custom-dropdown-selected').textContent = text;
+
+            // Update selected state
+            authDropdownOptions.querySelectorAll('.custom-dropdown-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            option.classList.add('selected');
+
+            closeAuthDropdown();
+        }
+
+        // Event Listeners for Auth Dropdown
+        authDropdownTrigger.addEventListener('click', (e) => {
+            e.preventDefault();
+            toggleAuthDropdown();
+        });
+
+        authDropdownOptions.addEventListener('click', (e) => {
+            const option = e.target.closest('.custom-dropdown-option');
+            if (option) {
+                selectAuthOption(option);
+            }
+        });
+
+        // Make auth options focusable
+        authDropdownOptions.querySelectorAll('.custom-dropdown-option').forEach(option => {
+            option.setAttribute('tabindex', '0');
         });
 
         // Custom Profile Dropdown Functionality
@@ -1270,8 +1374,23 @@
         function showOnboarding() {
             onboardingOverlay.style.display = 'flex';
             socket.emit('get-default-settings', (res) => {
-                if (res.settings && res.settings.port !== undefined) {
-                    portInput.value = res.settings.port;
+                if (res.settings) {
+                    if (res.settings.host !== undefined) {
+                        hostInput.value = res.settings.host;
+                    }
+                    if (res.settings.port !== undefined) {
+                        portInput.value = res.settings.port;
+                    }
+                    if (res.settings.auth !== undefined) {
+                        authSelect.value = res.settings.auth;
+                        // Update the dropdown display to match
+                        const selectedText = authDropdownOptions.querySelector(`[data-value="${res.settings.auth}"] .custom-dropdown-option-text`).textContent;
+                        authDropdownTrigger.querySelector('.custom-dropdown-selected').textContent = selectedText;
+                        authDropdownOptions.querySelectorAll('.custom-dropdown-option').forEach(opt => {
+                            opt.classList.remove('selected');
+                        });
+                        authDropdownOptions.querySelector(`[data-value="${res.settings.auth}"]`).classList.add('selected');
+                    }
                 }
             });
             setTimeout(() => agentNameInput.focus(), 100);
@@ -1315,6 +1434,28 @@
             }
         });
 
+        // Skip API Key button functionality
+        skipApiKeyBtn.addEventListener('click', () => {
+            // Generate a fake API key that starts with "sk-" to bypass validation
+            const fakeApiKey = 'sk-local-test-' + Math.random().toString(36).substring(2, 15);
+            apiKeyInput.value = fakeApiKey;
+            document.getElementById('apiKeyError').style.display = 'none';
+            
+            // Show a confirmation message
+            const confirmation = document.createElement('div');
+            confirmation.className = 'form-hint';
+            confirmation.style.color = '#4ade80';
+            confirmation.style.marginTop = '10px';
+            confirmation.textContent = '✓ API key requirement bypassed - unlimited local usage enabled';
+            
+            // Remove any existing confirmation
+            const existingConfirmation = document.getElementById('skipApiKeyConfirmation');
+            if (existingConfirmation) existingConfirmation.remove();
+            
+            confirmation.id = 'skipApiKeyConfirmation';
+            skipApiKeyBtn.parentNode.appendChild(confirmation);
+        });
+
         finishOnboardingBtn.addEventListener('click', async () => {
             const name = agentNameInput.value.trim();
             const error = validateAgentName(name);
@@ -1340,7 +1481,9 @@
             // Build settings from onboarding form
             const onboardingSettings = {
                 name: name,
+                host: hostInput.value || 'localhost',
                 port: portInput.value,
+                auth: authSelect.value,
                 model: modelSelect.value,
                 worker_api_key: apiKey,
                 base_profile: baseProfileSelect.value,
